@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Requests - Student Attendance System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/login.css">
+</head>
+
+<body>
+
+    <!-- ==========================================
+         SIDEBAR
+    ========================================== -->
+
+    <aside class="sidebar">
+
+        <div class="sidebar-header">
+            <h2>📚 Attendance</h2>
+        </div>
+
+        <nav class="sidebar-nav">
+
+            <a href="students.html" class="nav-link">
+                🏠 Dashboard
+            </a>
+
+            <a href="attendance.html" class="nav-link">
+                📊 Attendance
+            </a>
+
+            <a href="calendar.html" class="nav-link">
+                📅 Calendar
+            </a>
+
+            <a href="reports.html" class="nav-link">
+                📈 Reports
+            </a>
+
+            <a href="student-details.html" class="nav-link">
+                👤 My Profile
+            </a>
+
+            <a href="leave.html" class="nav-link active">
+                📄 Leave Letter
+            </a>
+
+            <a href="settings.html" class="nav-link">
+                ⚙️ Settings
+            </a>
+
+        </nav>
+
+        <div class="sidebar-footer">
+            <button id="logoutBtn" class="logout-btn">
+                🚪 Logout
+            </button>
+        </div>
+
+    </aside>
+
+
+    <!-- ==========================================
+         MAIN CONTENT
+    ========================================== -->
+
+    <div class="main-content">
+
+        <!-- ==========================================
+             TOP BAR
+        ========================================== -->
+
+        <div class="top-bar">
+
+            <button id="mobileMenuBtn" class="mobile-menu-btn">
+                ☰
+            </button>
+
+            <h1 class="page-title">
+                Leave Letter
+            </h1>
+
+            <div class="user-info">
+                <div class="user-details">
+                    <p class="user-name" id="userName">
+                        Student Name
+                    </p>
+                    <p class="user-role">
+                        Student
+                    </p>
+                </div>
+                <div class="user-avatar">
+                    👤
+                </div>
+            </div>
+
+        </div>
+
+
+        <!-- ==========================================
+             PAGE CONTENT
+        ========================================== -->
+
+        <div class="page-content">
+
+            <!-- ==============================
+                 LEAVE REQUEST FORM
+            ============================== -->
+
+            <div class="card leave-form-card">
+
+                <div class="card-header">
+                    📝 Submit Leave Request
+                </div>
+
+                <div class="card-body">
+
+                    <form id="leaveForm" class="leave-form">
+
+                        <!-- Leave Type -->
+                        <div class="form-group-row">
+                            <div class="form-group">
+                                <label for="leaveType">
+                                    Leave Type <span class="required">*</span>
+                                </label>
+                                <select id="leaveType" required>
+                                    <option value="">
+                                        -- Select Leave Type --
+                                    </option>
+                                    <option value="Personal">
+                                        Personal Leave
+                                    </option>
+                                    <option value="Medical">
+                                        Medical Leave
+                                    </option>
+                                    <option value="Casual">
+                                        Casual Leave
+                                    </option>
+                                    <option value="Emergency">
+                                        Emergency Leave
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="leaveFrom">
+                                    From Date <span class="required">*</span>
+                                </label>
+                                <input
+                                    type="date"
+                                    id="leaveFrom"
+                                    required
+                                >
+                            </div>
+
+                            <div class="form-group">
+                                <label for="leaveTo">
+                                    To Date <span class="required">*</span>
+                                </label>
+                                <input
+                                    type="date"
+                                    id="leaveTo"
+                                    required
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Reason -->
+                        <div class="form-group">
+                            <label for="leaveReason">
+                                Reason <span class="required">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="leaveReason"
+                                placeholder="Reason for leave"
+                                maxlength="100"
+                                required
+                            >
+                        </div>
+
+                        <!-- Description -->
+                        <div class="form-group">
+                            <label for="leaveDescription">
+                                Description (Optional)
+                            </label>
+                            <textarea
+                                id="leaveDescription"
+                                placeholder="Additional details about your leave request"
+                                rows="4"
+                                maxlength="500"
+                            ></textarea>
+                        </div>
+
+                        <!-- Message -->
+                        <p id="leaveMessage" class="form-message"></p>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="submit-btn">
+                            📤 Submit Leave Request
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+
+            <!-- ==============================
+                 LEAVE STATISTICS
+            ============================== -->
+
+            <div class="leave-stats">
+
+                <div class="stat-card">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-content">
+                        <p class="stat-label">
+                            Total Leave Days
+                        </p>
+                        <p class="stat-value" id="totalLeaveDays">
+                            0 / 30
+                        </p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-content">
+                        <p class="stat-label">
+                            Pending Requests
+                        </p>
+                        <p class="stat-value" id="pendingRequests">
+                            0
+                        </p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <p class="stat-label">
+                            Approved Leaves
+                        </p>
+                        <p class="stat-value" id="approvedLeaves">
+                            0
+                        </p>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">❌</div>
+                    <div class="stat-content">
+                        <p class="stat-label">
+                            Rejected Leaves
+                        </p>
+                        <p class="stat-value" id="rejectedLeaves">
+                            0
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- ==============================
+                 LEAVE REQUESTS TABLE
+            ============================== -->
+
+            <div class="card leave-table-card">
+
+                <div class="card-header">
+                    📋 Leave Requests History
+                </div>
+
+                <div class="table-container">
+
+                    <table class="leave-table">
+
+                        <thead>
+                            <tr>
+                                <th>From Date</th>
+                                <th>To Date</th>
+                                <th>Type</th>
+                                <th>Reason</th>
+                                <th>Days</th>
+                                <th>Status</th>
+                                <th>Submitted</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="leaveTableBody">
+                            <!-- Leave requests will be populated here -->
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div id="noLeaveMessage" class="no-data-message">
+                    <p>
+                        📭 No leave requests yet. Submit your first leave request above!
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- JavaScript -->
+
+    <script src="js/leave.js"></script>
+
+</body>
+
+</html>

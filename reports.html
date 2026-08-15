@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Reports - Student Dashboard</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+
+<body>
+
+    <!-- ==========================================
+         SIDEBAR
+    =========================================== -->
+
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-logo">
+
+            <div class="logo-icon">
+                📚
+            </div>
+
+            <div>
+                <h2>Attendance</h2>
+                <span>Management System</span>
+            </div>
+
+        </div>
+
+
+        <!-- Navigation -->
+
+        <nav class="navigation">
+
+            <a href="students.html" class="nav-link">
+                <span>🏠</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="attendance.html" class="nav-link">
+                <span>📊</span>
+                <span>Attendance</span>
+            </a>
+
+            <a href="calendar.html" class="nav-link">
+                <span>📅</span>
+                <span>Calendar</span>
+            </a>
+
+            <a href="reports.html" class="nav-link active">
+                <span>📈</span>
+                <span>Reports</span>
+            </a>
+
+            <a href="student-details.html" class="nav-link">
+                <span>👤</span>
+                <span>My Profile</span>
+            </a>
+
+            <a href="leave.html" class="nav-link">
+                <span>📝</span>
+                <span>Leave Letter</span>
+            </a>
+
+            <a href="settings.html" class="nav-link">
+                <span>⚙️</span>
+                <span>Settings</span>
+            </a>
+
+        </nav>
+
+
+        <!-- Logout -->
+
+        <div class="sidebar-bottom">
+
+            <button
+                id="logoutButton"
+                class="logout-btn"
+            >
+                🚪
+                <span>Logout</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- ==========================================
+         MAIN CONTENT
+    =========================================== -->
+
+    <main class="main-content">
+
+
+        <!-- ======================================
+             TOP BAR
+        ======================================= -->
+
+        <header class="topbar">
+
+            <button
+                id="menuButton"
+                class="menu-button"
+            >
+                ☰
+            </button>
+
+
+            <div class="topbar-title">
+
+                <h1>Attendance Reports</h1>
+
+                <p>
+                    Student Attendance Management System
+                </p>
+
+            </div>
+
+
+            <div class="topbar-user">
+
+                <div class="user-avatar">
+                    👤
+                </div>
+
+                <div class="user-info">
+
+                    <strong id="topStudentName">
+                        Student
+                    </strong>
+
+                    <span id="topStudentRoll">
+                        Roll Number
+                    </span>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ======================================
+             PAGE CONTENT
+        ======================================= -->
+
+        <section class="dashboard-content">
+
+
+            <!-- ==================================
+                 WELCOME CARD
+            =================================== -->
+
+            <div class="welcome-card">
+
+                <div class="welcome-text">
+
+                    <p class="welcome-small">
+                        Your Performance 📊
+                    </p>
+
+                    <h2 id="studentName">
+                        Student
+                    </h2>
+
+                    <p>
+                        Detailed attendance and performance reports.
+                    </p>
+
+                </div>
+
+
+                <div class="welcome-icon">
+                    📉
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 YEAR-TO-DATE OVERVIEW
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Year-to-Date Overview</h2>
+
+            </div>
+
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        📊
+                    </div>
+
+                    <div class="stat-content">
+
+                        <p class="stat-label">
+                            Overall Attendance
+                        </p>
+
+                        <h3 class="stat-value" id="ytdAttendance">
+                            82%
+                        </h3>
+
+                    </div>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        📚
+                    </div>
+
+                    <div class="stat-content">
+
+                        <p class="stat-label">
+                            Total Classes Held
+                        </p>
+
+                        <h3 class="stat-value" id="totalHeld">
+                            320
+                        </h3>
+
+                    </div>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        ✅
+                    </div>
+
+                    <div class="stat-content">
+
+                        <p class="stat-label">
+                            Classes Attended
+                        </p>
+
+                        <h3 class="stat-value" id="totalAttended">
+                            263
+                        </h3>
+
+                    </div>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        ❌
+                    </div>
+
+                    <div class="stat-content">
+
+                        <p class="stat-label">
+                            Absences
+                        </p>
+
+                        <h3 class="stat-value" id="totalAbsent">
+                            57
+                        </h3>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 MONTHLY TREND
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Attendance Trend (Last 6 Months)</h2>
+
+            </div>
+
+
+            <div class="chart-wrapper">
+
+                <div class="attendance-chart">
+
+                    <div class="chart-bar">
+
+                        <div class="bar-label">
+                            August
+                        </div>
+
+                        <div class="bar-container">
+
+                            <div class="bar" style="height: 75%; background: #e74c3c;">
+                                <span class="bar-value">75%</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="chart-bar">
+
+                        <div class="bar-label">
+                            September
+                        </div>
+
+                        <div class="bar-container">
+
+                            <div class="bar" style="height: 82%; background: #3498db;">
+                                <span class="bar-value">82%</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="chart-bar">
+
+                        <div class="bar-label">
+                            October
+                        </div>
+
+                        <div class="bar-container">
+
+                            <div class="bar" style="height: 78%; background: #f39c12;">
+                                <span class="bar-value">78%</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="chart-bar">
+
+                        <div class="bar-label">
+                            November
+                        </div>
+
+                        <div class="bar-container">
+
+                            <div class="bar" style="height: 85%; background: #2ecc71;">
+                                <span class="bar-value">85%</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="chart-bar">
+
+                        <div class="bar-label">
+                            December
+                        </div>
+
+                        <div class="bar-container">
+
+                            <div class="bar" style="height: 88%; background: #27ae60;">
+                                <span class="bar-value">88%</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="chart-bar">
+
+                        <div class="bar-label">
+                            January
+                        </div>
+
+                        <div class="bar-container">
+
+                            <div class="bar" style="height: 82%; background: #667eea;">
+                                <span class="bar-value">82%</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 SUBJECT PERFORMANCE
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Subject-wise Performance Report</h2>
+
+            </div>
+
+
+            <div class="subject-table-wrapper">
+
+                <table class="subject-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Subject</th>
+
+                            <th>Total Classes</th>
+
+                            <th>Attended</th>
+
+                            <th>Absent</th>
+
+                            <th>Percentage</th>
+
+                            <th>Status</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="reportTableBody">
+
+                        <!-- JavaScript will insert subjects -->
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 ATTENDANCE DISTRIBUTION
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Attendance Distribution</h2>
+
+            </div>
+
+
+            <div class="distribution-container">
+
+                <div class="pie-chart">
+
+                    <div class="pie-circle">
+
+                        <div class="pie-label">
+                            82%
+                        </div>
+
+                    </div>
+
+                    <div class="pie-legend">
+
+                        <div class="legend-item">
+
+                            <span class="legend-color" style="background: #2ecc71;"></span>
+
+                            <span>Attended (263)</span>
+
+                        </div>
+
+                        <div class="legend-item">
+
+                            <span class="legend-color" style="background: #e74c3c;"></span>
+
+                            <span>Absent (57)</span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 PERFORMANCE STATUS
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Performance Analysis</h2>
+
+            </div>
+
+
+            <div class="performance-cards">
+
+                <div class="performance-card excellent">
+
+                    <div class="perf-icon">
+                        🌟
+                    </div>
+
+                    <h3>Excellent</h3>
+
+                    <p>
+                        ≥ 90% Attendance
+                    </p>
+
+                    <span class="perf-count" id="excellentCount">
+                        0
+                    </span>
+
+                </div>
+
+                <div class="performance-card good">
+
+                    <div class="perf-icon">
+                        ✅
+                    </div>
+
+                    <h3>Good</h3>
+
+                    <p>
+                        80-89% Attendance
+                    </p>
+
+                    <span class="perf-count" id="goodCount">
+                        3
+                    </span>
+
+                </div>
+
+                <div class="performance-card average">
+
+                    <div class="perf-icon">
+                        ⚠️
+                    </div>
+
+                    <h3>Average</h3>
+
+                    <p>
+                        75-79% Attendance
+                    </p>
+
+                    <span class="perf-count" id="averageCount">
+                        3
+                    </span>
+
+                </div>
+
+                <div class="performance-card poor">
+
+                    <div class="perf-icon">
+                        ❌
+                    </div>
+
+                    <h3>Poor</h3>
+
+                    <p>
+                        &lt; 75% Attendance
+                    </p>
+
+                    <span class="perf-count" id="poorCount">
+                        2
+                    </span>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 RECOMMENDATIONS
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Recommendations</h2>
+
+            </div>
+
+
+            <div class="recommendation-cards">
+
+                <div class="recommendation-card">
+
+                    <div class="rec-icon">
+                        💡
+                    </div>
+
+                    <div>
+
+                        <h4>Maintain Consistency</h4>
+
+                        <p>
+                            Your attendance is 82%. Try to attend more classes to reach the 90% mark.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="recommendation-card">
+
+                    <div class="rec-icon">
+                        📚
+                    </div>
+
+                    <div>
+
+                        <h4>Focus on Database</h4>
+
+                        <p>
+                            Your Database Management attendance is 75%. This needs improvement.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="recommendation-card">
+
+                    <div class="rec-icon">
+                        🎯
+                    </div>
+
+                    <div>
+
+                        <h4>Balance Workload</h4>
+
+                        <p>
+                            You're doing well in 5 subjects. Strengthen weak areas by attending all classes.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 STUDENT INFORMATION
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Your Information</h2>
+
+            </div>
+
+
+            <div class="student-info-grid">
+
+
+                <div class="info-card">
+
+                    <div class="info-icon">
+                        🆔
+                    </div>
+
+                    <div>
+
+                        <span>Roll Number</span>
+
+                        <strong id="rollNo">
+                            -
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <div class="info-icon">
+                        💻
+                    </div>
+
+                    <div>
+
+                        <span>Department</span>
+
+                        <strong id="department">
+                            CSE
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <div class="info-icon">
+                        🎓
+                    </div>
+
+                    <div>
+
+                        <span>Year</span>
+
+                        <strong id="year">
+                            4th Year
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <div class="info-icon">
+                        📚
+                    </div>
+
+                    <div>
+
+                        <span>Semester</span>
+
+                        <strong id="semester">
+                            7th Semester
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+    </main>
+
+
+    <!-- JavaScript -->
+
+    <script src="js/reports.js"></script>
+
+</body>
+
+</html>

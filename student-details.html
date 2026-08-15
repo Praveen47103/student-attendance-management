@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>My Profile - Student Dashboard</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+
+<body>
+
+    <!-- ==========================================
+         SIDEBAR
+    =========================================== -->
+
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-logo">
+
+            <div class="logo-icon">
+                📚
+            </div>
+
+            <div>
+                <h2>Attendance</h2>
+                <span>Management System</span>
+            </div>
+
+        </div>
+
+
+        <!-- Navigation -->
+
+        <nav class="navigation">
+
+            <a href="students.html" class="nav-link">
+                <span>🏠</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="attendance.html" class="nav-link">
+                <span>📊</span>
+                <span>Attendance</span>
+            </a>
+
+            <a href="calendar.html" class="nav-link">
+                <span>📅</span>
+                <span>Calendar</span>
+            </a>
+
+            <a href="reports.html" class="nav-link">
+                <span>📈</span>
+                <span>Reports</span>
+            </a>
+
+            <a href="student-details.html" class="nav-link active">
+                <span>👤</span>
+                <span>My Profile</span>
+            </a>
+
+            <a href="leave.html" class="nav-link">
+                <span>📝</span>
+                <span>Leave Letter</span>
+            </a>
+
+            <a href="settings.html" class="nav-link">
+                <span>⚙️</span>
+                <span>Settings</span>
+            </a>
+
+        </nav>
+
+
+        <!-- Logout -->
+
+        <div class="sidebar-bottom">
+
+            <button
+                id="logoutButton"
+                class="logout-btn"
+            >
+                🚪
+                <span>Logout</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- ==========================================
+         MAIN CONTENT
+    =========================================== -->
+
+    <main class="main-content">
+
+
+        <!-- ======================================
+             TOP BAR
+        ======================================= -->
+
+        <header class="topbar">
+
+            <button
+                id="menuButton"
+                class="menu-button"
+            >
+                ☰
+            </button>
+
+
+            <div class="topbar-title">
+
+                <h1>Student Profile</h1>
+
+                <p>
+                    Student Attendance Management System
+                </p>
+
+            </div>
+
+
+            <div class="topbar-user">
+
+                <div class="user-avatar">
+                    👤
+                </div>
+
+                <div class="user-info">
+
+                    <strong id="topStudentName">
+                        Student
+                    </strong>
+
+                    <span id="topStudentRoll">
+                        Roll Number
+                    </span>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ======================================
+             PAGE CONTENT
+        ======================================= -->
+
+        <section class="dashboard-content">
+
+
+            <!-- ==================================
+                 PROFILE HEADER
+            =================================== -->
+
+            <div class="profile-header">
+
+                <div class="profile-avatar">
+                    👤
+                </div>
+
+                <div class="profile-intro">
+
+                    <h1 id="profileName">
+                        Student Name
+                    </h1>
+
+                    <p id="profileRoll">
+                        Roll Number: -
+                    </p>
+
+                    <p id="profileDept">
+                        Department: CSE
+                    </p>
+
+                    <div class="profile-badges">
+
+                        <span class="badge" id="profileYear">
+                            4th Year
+                        </span>
+
+                        <span class="badge" id="profileSem">
+                            7th Semester
+                        </span>
+
+                        <span class="badge badge-status">
+                            Active
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 PERSONAL INFORMATION
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Personal Information</h2>
+
+            </div>
+
+
+            <div class="profile-grid">
+
+                <div class="profile-card">
+
+                    <div class="card-header">
+                        Personal Details
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📋 Full Name
+                            </span>
+
+                            <span class="info-value" id="fullName">
+                                John Doe
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                🆔 Roll Number
+                            </span>
+
+                            <span class="info-value" id="rollNum">
+                                23RU1A0501
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                👶 Date of Birth
+                            </span>
+
+                            <span class="info-value" id="dob">
+                                January 15, 2002
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                ⚧ Gender
+                            </span>
+
+                            <span class="info-value" id="gender">
+                                Male
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                🪪 ID Number
+                            </span>
+
+                            <span class="info-value" id="idNum">
+                                12345678901234
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="profile-card">
+
+                    <div class="card-header">
+                        Contact Information
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📧 Email
+                            </span>
+
+                            <span class="info-value" id="email">
+                                john.doe@college.edu
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📱 Phone
+                            </span>
+
+                            <span class="info-value" id="phone">
+                                +91 9876543210
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📍 Address
+                            </span>
+
+                            <span class="info-value" id="address">
+                                123 Main Street, City, State
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                🌍 City
+                            </span>
+
+                            <span class="info-value" id="city">
+                                Hyderabad
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📮 Postal Code
+                            </span>
+
+                            <span class="info-value" id="postal">
+                                500001
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 ACADEMIC INFORMATION
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Academic Information</h2>
+
+            </div>
+
+
+            <div class="profile-grid">
+
+                <div class="profile-card">
+
+                    <div class="card-header">
+                        Current Program
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                🎓 Degree
+                            </span>
+
+                            <span class="info-value" id="degree">
+                                Bachelor of Technology
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                💻 Department
+                            </span>
+
+                            <span class="info-value" id="dept">
+                                Computer Science & Engineering
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📅 Year
+                            </span>
+
+                            <span class="info-value" id="year">
+                                4th Year
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📚 Semester
+                            </span>
+
+                            <span class="info-value" id="sem">
+                                7th Semester
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                🏫 Institution
+                            </span>
+
+                            <span class="info-value" id="institution">
+                                ABC Engineering College
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="profile-card">
+
+                    <div class="card-header">
+                        Academic Performance
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📊 Current CGPA
+                            </span>
+
+                            <span class="info-value" id="cgpa">
+                                8.2/10
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📈 Attendance
+                            </span>
+
+                            <span class="info-value" id="attendance">
+                                82%
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                ✅ Status
+                            </span>
+
+                            <span class="info-value status-good">
+                                Regular Student
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📅 Admission Date
+                            </span>
+
+                            <span class="info-value" id="admissionDate">
+                                August 15, 2021
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📋 Batch
+                            </span>
+
+                            <span class="info-value" id="batch">
+                                2021-2025
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 EMERGENCY CONTACT
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Emergency Contact</h2>
+
+            </div>
+
+
+            <div class="profile-grid">
+
+                <div class="profile-card">
+
+                    <div class="card-header">
+                        Emergency Contact Information
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                👤 Contact Name
+                            </span>
+
+                            <span class="info-value" id="emergencyName">
+                                Jane Doe
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                👨‍👩‍👧 Relation
+                            </span>
+
+                            <span class="info-value" id="emergencyRelation">
+                                Mother
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📞 Contact Number
+                            </span>
+
+                            <span class="info-value" id="emergencyPhone">
+                                +91 9876543211
+                            </span>
+
+                        </div>
+
+                        <div class="info-row">
+
+                            <span class="info-label">
+                                📧 Email
+                            </span>
+
+                            <span class="info-value" id="emergencyEmail">
+                                jane.doe@email.com
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 SUBJECTS/COURSES
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Enrolled Subjects</h2>
+
+            </div>
+
+
+            <div class="subjects-grid" id="subjectsGrid">
+
+                <!-- JavaScript will insert subjects -->
+
+            </div>
+
+
+
+            <!-- ==================================
+                 QUICK STATS
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Quick Statistics</h2>
+
+            </div>
+
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        📚
+                    </div>
+
+                    <div class="stat-content">
+
+                        <p class="stat-label">
+                            Subjects Enrolled
+                        </p>
+
+                        <h3 class="stat-value">
+                            8
+                        </h3>
+
+                    </div>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        📊
+                    </div>
+
+                    <div class="stat-content">
+
+                        <p class="stat-label">
+                            Average Attendance
+                        </p>
+
+                        <h3 class="stat-value">
+                            82%
+                        </h3>
+
+                    </div>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        🏆
+                    </div>
+
+                    <div class="stat-content">
+
+                        <p class="stat-label">
+                            Current CGPA
+                        </p>
+
+                        <h3 class="stat-value">
+                            8.2
+                        </h3>
+
+                    </div>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        ⏰
+                    </div>
+
+                    <div class="stat-content">
+
+                        <p class="stat-label">
+                            Time Remaining
+                        </p>
+
+                        <h3 class="stat-value">
+                            1 Year
+                        </h3>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+    </main>
+
+
+    <!-- JavaScript -->
+
+    <script src="js/student-details.js"></script>
+
+</body>
+
+</html>

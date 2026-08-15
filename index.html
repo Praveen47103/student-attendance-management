@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Student Attendance Management System</title>
+
+    <link rel="stylesheet" href="css/login.css">
+</head>
+
+<body>
+
+    <div class="login-page">
+
+        <div class="login-card">
+
+            <!-- Logo -->
+            <div class="logo">
+                📚
+            </div>
+
+            <h1>Student Attendance</h1>
+
+            <p class="subtitle">
+                Management System
+            </p>
+
+
+            <!-- ============================= -->
+            <!-- LOGIN TYPE -->
+            <!-- ============================= -->
+
+            <div class="form-group">
+
+                <label for="loginType">
+                    Login As
+                </label>
+
+                <select id="loginType">
+
+                    <option value="student">
+                        Student
+                    </option>
+
+                    <option value="admin">
+                        Admin
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- ============================= -->
+            <!-- STUDENT LOGIN -->
+            <!-- ============================= -->
+
+            <div id="studentLogin">
+
+                <!-- Roll Number -->
+
+                <div class="form-group">
+
+                    <label for="rollNumber">
+                        Roll Number
+                    </label>
+
+                    <input
+                        type="text"
+                        id="rollNumber"
+                        placeholder="Enter your roll number"
+                        autocomplete="off"
+                    >
+
+                </div>
+
+
+                <!-- Student Password -->
+
+                <div class="form-group">
+
+                    <label for="studentPassword">
+                        Password
+                    </label>
+
+                    <div class="password-box">
+
+                        <input
+                            type="password"
+                            id="studentPassword"
+                            placeholder="Enter your password"
+                        >
+
+                        <button
+                            type="button"
+                            class="password-toggle"
+                            id="studentPasswordToggle"
+                            aria-label="Show or hide password"
+                        >
+                            👁️
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ============================= -->
+            <!-- ADMIN LOGIN -->
+            <!-- ============================= -->
+
+            <div
+                id="adminLogin"
+                class="hidden"
+            >
+
+                <!-- Admin Username -->
+
+                <div class="form-group">
+
+                    <label for="adminUsername">
+                        Admin Username
+                    </label>
+
+                    <input
+                        type="text"
+                        id="adminUsername"
+                        placeholder="Enter admin username"
+                        autocomplete="off"
+                    >
+
+                </div>
+
+
+                <!-- Admin Password -->
+
+                <div class="form-group">
+
+                    <label for="adminPassword">
+                        Password
+                    </label>
+
+                    <div class="password-box">
+
+                        <input
+                            type="password"
+                            id="adminPassword"
+                            placeholder="Enter admin password"
+                        >
+
+                        <button
+                            type="button"
+                            class="password-toggle"
+                            id="adminPasswordToggle"
+                            aria-label="Show or hide password"
+                        >
+                            👁️
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ============================= -->
+            <!-- LOGIN BUTTON -->
+            <!-- ============================= -->
+
+            <button
+                type="button"
+                id="loginButton"
+                class="login-btn"
+            >
+                Login
+            </button>
+
+
+            <!-- ============================= -->
+            <!-- LOGIN MESSAGE -->
+            <!-- ============================= -->
+
+            <p
+                id="loginMessage"
+                class="login-message"
+            ></p>
+
+
+            <!-- ============================= -->
+            <!-- DEMO INFORMATION -->
+            <!-- ============================= -->
+
+            <div class="demo-info">
+
+                <p>
+                    <strong>College Mini Project</strong>
+                </p>
+
+                <p>
+                    Student Attendance Management System
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- JavaScript -->
+
+    <script src="js/auth.js"></script>
+
+</body>
+
+</html>
