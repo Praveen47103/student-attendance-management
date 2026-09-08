@@ -168,6 +168,10 @@
             </div>
 
 
+            <div style="display: flex; justify-content: flex-end; margin: -5px 0 15px 0;">
+                <a href="#" id="forgotPasswordBtn" style="color: #667eea; font-size: 13px; text-decoration: none; font-weight: 500;">Forgot Password?</a>
+            </div>
+
             <!-- ============================= -->
             <!-- LOGIN BUTTON -->
             <!-- ============================= -->
@@ -211,6 +215,36 @@
 
     </div>
 
+
+    <!-- ============================= -->
+    <!-- FORGOT PASSWORD MODAL -->
+    <!-- ============================= -->
+    <div id="forgotPasswordModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px;">
+        <div style="background: white; padding: 30px; border-radius: 16px; width: 100%; max-width: 420px; box-shadow: 0 10px 35px rgba(0,0,0,0.25); text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 20px; color: #333; margin: 0;">🔐 Reset Password</h2>
+                <button type="button" id="closeForgotModal" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #888;">✕</button>
+            </div>
+            <p style="font-size: 13px; color: #666; margin-bottom: 18px; line-height: 1.5;">
+                Enter your registered college email or roll number. We will send you a secure password reset link.
+            </p>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="resetEmail" style="display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #444;">Email or Roll Number</label>
+                <input type="text" id="resetEmail" placeholder="e.g. 23RU1A0501 or user@college.edu" style="width: 100%; padding: 12px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none;">
+            </div>
+            <p id="resetMessage" style="font-size: 13px; margin-bottom: 15px; font-weight: 500;"></p>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" id="cancelResetBtn" style="padding: 10px 18px; border: 1px solid #ddd; background: #f8f9fa; border-radius: 8px; cursor: pointer; font-weight: 500;">Cancel</button>
+                <button type="button" id="submitResetBtn" class="login-btn" style="padding: 10px 20px; width: auto; margin-top: 0;">Send Reset Link</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Supabase JS Client & Configuration -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/supabase-client.js"></script>
 
     <!-- JavaScript -->
 

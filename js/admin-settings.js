@@ -85,21 +85,13 @@ function setupPasswordForm() {
     setupPasswordToggle('toggleNewPassword', 'newPassword');
     setupPasswordToggle('toggleConfirmPassword', 'confirmPassword');
 
-    form.addEventListener('submit', function (e) {
+    form.addEventListener('submit', async function (e) {
         e.preventDefault();
 
         const currentPass = document.getElementById('currentPassword').value.trim();
         const newPass = document.getElementById('newPassword').value.trim();
         const confirmPass = document.getElementById('confirmPassword').value.trim();
         const messageEl = document.getElementById('passwordMessage');
-
-        const savedAdminPass = localStorage.getItem('adminPassword') || 'admin123';
-
-        if (currentPass !== savedAdminPass) {
-            messageEl.textContent = '❌ Current password is incorrect.';
-            messageEl.className = 'form-message error';
-            return;
-        }
 
         if (newPass.length < 6) {
             messageEl.textContent = '❌ New password must be at least 6 characters.';
@@ -117,6 +109,36 @@ function setupPasswordForm() {
             messageEl.textContent = '❌ New password must be different from current password.';
             messageEl.className = 'form-message error';
             return;
+        }
+
+        let supabaseSessionActive = false;
+        if (window.supabaseClient) {
+            try {
+                const { data: { session } } = await window.supabaseClient.auth.getSession();
+                if (session && session.user) {
+                    supabaseSessionActive = true;
+                    const { error: updateErr } = await window.supabaseClient.auth.updateUser({
+                        password: newPass
+                    });
+
+                    if (updateErr) {
+                        messageEl.textContent = '❌ ' + (updateErr.message || 'Failed to update admin password.');
+                        messageEl.className = 'form-message error';
+                        return;
+                    }
+                }
+            } catch (sbErr) {
+                console.warn('[AdminSettings] Supabase password update warning:', sbErr);
+            }
+        }
+
+        if (!supabaseSessionActive) {
+            const savedAdminPass = localStorage.getItem('adminPassword') || 'admin123';
+            if (currentPass !== savedAdminPass) {
+                messageEl.textContent = '❌ Current password is incorrect.';
+                messageEl.className = 'form-message error';
+                return;
+            }
         }
 
         localStorage.setItem('adminPassword', newPass);

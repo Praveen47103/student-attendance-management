@@ -3,13 +3,10 @@
 // ==========================================
 
 function applyDarkModeFromStorage() {
-
     const isDarkMode = localStorage.getItem('darkMode') === 'true';
-
     if (isDarkMode) {
         document.documentElement.setAttribute('data-theme', 'dark');
     }
-
 }
 
 applyDarkModeFromStorage();
@@ -22,128 +19,165 @@ applyDarkModeFromStorage();
 const savedStudent = localStorage.getItem("loggedInStudent");
 const savedAdmin = localStorage.getItem("loggedInAdmin");
 
-
-// If neither student nor admin is logged in
-// send them back to login page
-
 if (!savedStudent && !savedAdmin) {
-
     window.location.href = "index.html";
-
 }
 
-// If admin is logged in, redirect to admin page
 if (savedAdmin && !savedStudent) {
-
     window.location.href = "admin-dashboard.html";
-
 }
-
-
-// Convert saved data back into object
-// (only if student is logged in)
 
 const student = savedStudent ? JSON.parse(savedStudent) : null;
 
 
 // ==========================================
-// STUDENT INFORMATION
+// INITIALIZE DASHBOARD
 // ==========================================
 
-// Only display student info if student is logged in
+document.addEventListener('DOMContentLoaded', function () {
 
-if (student) {
+    if (!student) return;
 
-    // Student name
+    // Display student info
+    setElText("studentName", student.name);
+    setElText("rollNo", student.rollNo);
+    setElText("topStudentName", student.name);
+    setElText("topStudentRoll", student.rollNo);
+    setElText("department", student.department || "CSE");
+    setElText("year", student.year || "4th Year");
+    setElText("semester", student.semester || "7th Semester");
 
-    const studentNameEl = document.getElementById("studentName");
-    if (studentNameEl) {
-        studentNameEl.textContent = student.name;
+    setupMenuAndEvents();
+
+    // 1. Render initial cached / demo attendance stats
+    const initialStats = getStudentAttendanceStats(student.rollNo);
+    updateDashboardUI(initialStats);
+
+    // 2. Load live attendance from Supabase & subscribe to Realtime
+    loadLiveAttendance();
+
+});
+
+
+// ==========================================
+// LOAD LIVE ATTENDANCE (SUPABASE + REALTIME)
+// ==========================================
+
+async function loadLiveAttendance() {
+
+    if (!window.supabaseClient || !student || !student.rollNo) return;
+
+    try {
+        // Find student UUID
+        let studentId = student.dbId || student.id;
+        if (!studentId) {
+            const { data: s } = await window.supabaseClient
+                .from('students')
+                .select('id')
+                .eq('roll_number', student.rollNo)
+                .maybeSingle();
+            studentId = s?.id;
+        }
+
+        if (!studentId) return;
+
+        // Fetch live attendance records joined with sessions and subjects
+        async function fetchAndRender() {
+            const { data: records, error } = await window.supabaseClient
+                .from('attendance_records')
+                .select(`
+                    status,
+                    attendance_sessions (
+                        date,
+                        subjects (
+                            subject_code,
+                            subject_name
+                        )
+                    )
+                `)
+                .eq('student_id', studentId);
+
+            if (!error && Array.isArray(records) && records.length > 0) {
+                let present = 0;
+                let absent = 0;
+                const subMap = {};
+
+                records.forEach(r => {
+                    const status = r.status || 'present';
+                    const subName = r.attendance_sessions?.subjects?.subject_name || 'General';
+
+                    if (!subMap[subName]) {
+                        subMap[subName] = { name: subName, present: 0, absent: 0 };
+                    }
+
+                    if (status === 'present') {
+                        present++;
+                        subMap[subName].present++;
+                    } else {
+                        absent++;
+                        subMap[subName].absent++;
+                    }
+                });
+
+                const total = present + absent;
+                const overall = total > 0 ? Math.round((present / total) * 100) : 0;
+
+                const liveStats = {
+                    hasRealData: true,
+                    overall,
+                    present,
+                    absent,
+                    total,
+                    subjects: Object.values(subMap)
+                };
+
+                updateDashboardUI(liveStats);
+            }
+        }
+
+        // Run initial fetch
+        await fetchAndRender();
+
+        // Subscribe to Realtime updates on attendance_records for this student
+        window.supabaseClient
+            .channel(`dashboard-attendance-${student.rollNo}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'attendance_records',
+                    filter: `student_id=eq.${studentId}`
+                },
+                (payload) => {
+                    console.info('[Realtime] Live attendance record updated:', payload);
+                    fetchAndRender();
+                }
+            )
+            .subscribe();
+
+    } catch (err) {
+        console.warn('[Dashboard] Supabase live attendance error, using fallback:', err);
     }
 
-
-    // Roll number
-
-    const rollNoEl = document.getElementById("rollNo");
-    if (rollNoEl) {
-        rollNoEl.textContent = student.rollNo;
-    }
+}
 
 
-    // Top bar student name
+// ==========================================
+// UPDATE DASHBOARD METRICS & SUBJECT TABLE
+// ==========================================
 
-    const topStudentNameEl = document.getElementById("topStudentName");
-    if (topStudentNameEl) {
-        topStudentNameEl.textContent = student.name;
-    }
+function updateDashboardUI(stats) {
 
+    setElText("overallPercentage", stats.overall + "%");
+    setElText("presentCount", stats.present);
+    setElText("absentCount", stats.absent);
+    setElText("totalClasses", stats.total);
 
-    // Top bar roll number
-
-    const topStudentRollEl = document.getElementById("topStudentRoll");
-    if (topStudentRollEl) {
-        topStudentRollEl.textContent = student.rollNo;
-    }
-
-
-    // ==========================================
-    // STUDENT DETAILS
-    // ==========================================
-
-    // For now these are your current student details
-
-    const departmentEl = document.getElementById("department");
-    if (departmentEl) {
-        departmentEl.textContent = student.department || "CSE";
-    }
-
-
-    const yearEl = document.getElementById("year");
-    if (yearEl) {
-        yearEl.textContent = student.year || "4th Year";
-    }
-
-
-    const semesterEl = document.getElementById("semester");
-    if (semesterEl) {
-        semesterEl.textContent = student.semester || "7th Semester";
-    }
-
-
-    // ==========================================
-    // ATTENDANCE DATA (DYNAMIC SYNC + FALLBACK)
-    // ==========================================
-
-    const stats = getStudentAttendanceStats(student.rollNo);
-
-    // ==========================================
-    // DISPLAY ATTENDANCE
-    // ==========================================
-
-    const overallPercentageEl = document.getElementById("overallPercentage");
-    if (overallPercentageEl) {
-        overallPercentageEl.textContent = stats.overall + "%";
-    }
-
-    const presentCountEl = document.getElementById("presentCount");
-    if (presentCountEl) {
-        presentCountEl.textContent = stats.present;
-    }
-
-    const absentCountEl = document.getElementById("absentCount");
-    if (absentCountEl) {
-        absentCountEl.textContent = stats.absent;
-    }
-
-    const totalClassesEl = document.getElementById("totalClasses");
-    if (totalClassesEl) {
-        totalClassesEl.textContent = stats.total;
-    }
-
-    // Render Subject Table
     renderSubjectTable(stats.subjects);
 
 }
+
 
 // ==========================================
 // GET STUDENT ATTENDANCE STATS FROM STORAGE
@@ -211,8 +245,9 @@ function getStudentAttendanceStats(rollNo) {
 
 }
 
+
 // ==========================================
-// RENDER SUBJECT TABLE
+// RENDER SUBJECT TABLE (WITH 75% WARNING)
 // ==========================================
 
 function renderSubjectTable(subjectsList) {
@@ -228,12 +263,18 @@ function renderSubjectTable(subjectsList) {
         const percentage = total > 0 ? Math.round((subject.present / total) * 100) : 0;
 
         let percentageClass;
+        let recoveryTip = '';
+
         if (percentage >= 75) {
             percentageClass = "percentage-good";
         } else if (percentage >= 65) {
             percentageClass = "percentage-warning";
+            const needed = Math.max(0, Math.ceil(3 * subject.absent - subject.present));
+            recoveryTip = ` (Need ${needed} more)`;
         } else {
             percentageClass = "percentage-danger";
+            const needed = Math.max(0, Math.ceil(3 * subject.absent - subject.present));
+            recoveryTip = ` (Shortage: Need ${needed})`;
         }
 
         const row = document.createElement("tr");
@@ -243,7 +284,7 @@ function renderSubjectTable(subjectsList) {
             <td>${subject.absent}</td>
             <td>${total}</td>
             <td class="${percentageClass}">
-                ${percentage}%
+                ${percentage}%${recoveryTip}
             </td>
         `;
 
@@ -253,77 +294,41 @@ function renderSubjectTable(subjectsList) {
 
 }
 
-
-// ==========================================
-// LOGOUT
-// ==========================================
-
-document
-    .getElementById("logoutButton")
-    .addEventListener("click", function () {
-
-
-        // Remove student login
-
-        localStorage.removeItem(
-            "loggedInStudent"
-        );
-
-
-        // Remove admin login if available
-
-        localStorage.removeItem(
-            "loggedInAdmin"
-        );
-
-
-        // Go to login page
-
-        window.location.href =
-            "index.html";
-
-    });
+function setElText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+}
 
 
 // ==========================================
-// MOBILE MENU
+// MENU AND LOGOUT EVENTS
 // ==========================================
 
-const menuButton =
-    document.getElementById("menuButton");
+function setupMenuAndEvents() {
 
+    const menuButton = document.getElementById("menuButton");
+    const sidebar = document.getElementById("sidebar");
 
-const sidebar =
-    document.getElementById("sidebar");
+    if (menuButton && sidebar) {
+        menuButton.addEventListener("click", function () {
+            sidebar.classList.toggle("show");
+        });
 
-
-menuButton.addEventListener(
-    "click",
-    function () {
-
-        sidebar.classList.toggle("show");
-
+        const navLinks = document.querySelectorAll(".nav-link");
+        navLinks.forEach(function (link) {
+            link.addEventListener("click", function () {
+                sidebar.classList.remove("show");
+            });
+        });
     }
-);
 
+    const logoutBtn = document.getElementById("logoutButton");
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", function () {
+            localStorage.removeItem("loggedInStudent");
+            localStorage.removeItem("loggedInAdmin");
+            window.location.href = "index.html";
+        });
+    }
 
-// ==========================================
-// CLOSE MOBILE MENU WHEN LINK CLICKED
-// ==========================================
-
-const navLinks =
-    document.querySelectorAll(".nav-link");
-
-
-navLinks.forEach(function (link) {
-
-    link.addEventListener(
-        "click",
-        function () {
-
-            sidebar.classList.remove("show");
-
-        }
-    );
-
-});
+}

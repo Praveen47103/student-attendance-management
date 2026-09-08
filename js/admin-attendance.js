@@ -37,6 +37,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 let currentStudents = [];
 let currentAttendance = {}; // rollNo -> 'present' | 'absent'
+let cachedClasses = [];
+let cachedSubjects = [];
 
 
 // ==========================================
@@ -54,10 +56,10 @@ function initializeAttendancePage() {
 
 
 // ==========================================
-// POPULATE DROPDOWNS & DATE
+// POPULATE DROPDOWNS & DATE (SUPABASE + FALLBACK)
 // ==========================================
 
-function initializeSelectors() {
+async function initializeSelectors() {
 
     const dateInput = document.getElementById('attendanceDate');
     const classSelect = document.getElementById('classSelect');
@@ -67,27 +69,17 @@ function initializeSelectors() {
     const today = new Date().toISOString().split('T')[0];
     dateInput.value = today;
 
-    // Load classes
-    const classes = JSON.parse(localStorage.getItem('classList')) || [
-        { code: 'CSE-A', section: 'A', department: 'CSE', year: '4th Year', strength: 60 },
-        { code: 'CSE-B', section: 'B', department: 'CSE', year: '4th Year', strength: 62 },
-        { code: 'ECE-A', section: 'A', department: 'ECE', year: '4th Year', strength: 58 },
-        { code: 'MECH-A', section: 'A', department: 'MECH', year: '4th Year', strength: 55 },
-        { code: 'CIVIL-A', section: 'A', department: 'CIVIL', year: '4th Year', strength: 52 }
+    // Default classes
+    let classes = [
+        { code: 'CSE-A', section: 'A', department: 'CSE', year: '4th Year' },
+        { code: 'CSE-B', section: 'B', department: 'CSE', year: '4th Year' },
+        { code: 'ECE-A', section: 'A', department: 'ECE', year: '4th Year' },
+        { code: 'MECH-A', section: 'A', department: 'MECH', year: '4th Year' },
+        { code: 'CIVIL-A', section: 'A', department: 'CIVIL', year: '4th Year' }
     ];
 
-    classSelect.innerHTML = '<option value="">-- Select Class --</option>';
-    classes.forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.code;
-        opt.textContent = `${c.code} (${c.department} - ${c.year})`;
-        opt.setAttribute('data-dept', c.department);
-        opt.setAttribute('data-year', c.year);
-        classSelect.appendChild(opt);
-    });
-
-    // Load subjects
-    const subjects = JSON.parse(localStorage.getItem('subjectList')) || [
+    // Default subjects
+    let subjects = [
         { code: 'CS401', name: 'Web Technologies', department: 'CSE', semester: '7th Semester', credits: 4 },
         { code: 'CS402', name: 'Computer Networks', department: 'CSE', semester: '7th Semester', credits: 4 },
         { code: 'CS403', name: 'Machine Learning', department: 'CSE', semester: '7th Semester', credits: 4 },
@@ -98,6 +90,57 @@ function initializeSelectors() {
         { code: 'CS408', name: 'Cryptography', department: 'CSE', semester: '7th Semester', credits: 4 }
     ];
 
+    // Try Supabase first
+    if (window.supabaseClient) {
+        try {
+            const { data: dbClasses } = await window.supabaseClient
+                .from('classes')
+                .select('class_code, section, department, year')
+                .order('class_code');
+
+            if (dbClasses && dbClasses.length > 0) {
+                classes = dbClasses.map(c => ({
+                    code: c.class_code,
+                    section: c.section,
+                    department: c.department,
+                    year: c.year
+                }));
+            }
+
+            const { data: dbSubjects } = await window.supabaseClient
+                .from('subjects')
+                .select('subject_code, subject_name, department, semester, credits')
+                .order('subject_code');
+
+            if (dbSubjects && dbSubjects.length > 0) {
+                subjects = dbSubjects.map(s => ({
+                    code: s.subject_code,
+                    name: s.subject_name,
+                    department: s.department,
+                    semester: s.semester,
+                    credits: s.credits
+                }));
+            }
+        } catch (sbErr) {
+            console.warn('[Attendance] Supabase selector load error, using local fallback:', sbErr);
+        }
+    }
+
+    cachedClasses = classes;
+    cachedSubjects = subjects;
+
+    // Populate class dropdown
+    classSelect.innerHTML = '<option value="">-- Select Class --</option>';
+    classes.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.code;
+        opt.textContent = `${c.code} (${c.department} - ${c.year})`;
+        opt.setAttribute('data-dept', c.department);
+        opt.setAttribute('data-year', c.year);
+        classSelect.appendChild(opt);
+    });
+
+    // Populate subject dropdown
     subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
     subjects.forEach(s => {
         const opt = document.createElement('option');
@@ -111,18 +154,41 @@ function initializeSelectors() {
 
 
 // ==========================================
-// GET ALL STUDENTS
+// GET ALL STUDENTS (SUPABASE + FALLBACK)
 // ==========================================
 
-function getAllStudents() {
+async function getAllStudents() {
 
+    // 1. Try Supabase first
+    if (window.supabaseClient) {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('students')
+                .select('id, roll_number, name, department, year')
+                .order('roll_number', { ascending: true });
+
+            if (!error && Array.isArray(data) && data.length > 0) {
+                return data.map(s => ({
+                    id: s.id,
+                    rollNo: s.roll_number,
+                    name: s.name || s.roll_number,
+                    department: s.department || 'CSE',
+                    year: s.year || '4th Year'
+                }));
+            }
+        } catch (sbErr) {
+            console.warn('[Attendance] Supabase students fetch warning:', sbErr);
+        }
+    }
+
+    // 2. Fallback to localStorage
     const stored = localStorage.getItem('adminStudentsList');
     if (stored) {
         return JSON.parse(stored);
     }
 
-    // Default student list
-    const defaults = [
+    // 3. Fallback defaults
+    return [
         { rollNo: "23RU1A0501", name: "A.D.SATHISH REDDY", department: "CSE", year: "4th Year" },
         { rollNo: "23RU1A0502", name: "ADDAKULA SAJEEVA RANI", department: "CSE", year: "4th Year" },
         { rollNo: "23RU1A0503", name: "ADIVISHNU HITENDRANAG", department: "CSE", year: "4th Year" },
@@ -132,20 +198,8 @@ function getAllStudents() {
         { rollNo: "23RU1A0507", name: "BANALA MADHU", department: "CSE", year: "4th Year" },
         { rollNo: "23RU1A0508", name: "BANAVATH MANTHESH NAIK", department: "CSE", year: "4th Year" },
         { rollNo: "23RU1A0509", name: "BANDARU VASUDHA", department: "CSE", year: "4th Year" },
-        { rollNo: "23RU1A0510", name: "BANDI BHARGAVI", department: "CSE", year: "4th Year" },
-        { rollNo: "23RU1A0511", name: "BANDI KIRAN KUMAR", department: "CSE", year: "4th Year" },
-        { rollNo: "23RU1A0512", name: "BARIKI RAJU", department: "CSE", year: "4th Year" },
-        { rollNo: "23RU1A0513", name: "BATTA VENU", department: "CSE", year: "4th Year" },
-        { rollNo: "23RU1A0514", name: "BHOGAM MANOHAR", department: "CSE", year: "4th Year" },
-        { rollNo: "23RU1A0515", name: "BOGGARAPU NANDINI", department: "CSE", year: "4th Year" },
-        { rollNo: "23RU1A0516", name: "BOGYAM PRAVEEN KUMAR", department: "CSE", year: "4th Year" },
-        { rollNo: "23RU1A0517", name: "BOYA GOPAL", department: "CSE", year: "4th Year" },
-        { rollNo: "23RU1A0518", name: "BOYA VINOD", department: "CSE", year: "4th Year" },
-        { rollNo: "23RU1A0519", name: "BALGADEE JAGANMOHAN", department: "CSE", year: "4th Year" },
-        { rollNo: "23RU1A0520", name: "TARUN SAYIRAM", department: "CSE", year: "4th Year" }
+        { rollNo: "23RU1A0510", name: "BANDI BHARGAVI", department: "CSE", year: "4th Year" }
     ];
-
-    return defaults;
 
 }
 
@@ -172,44 +226,84 @@ function setupActionButtons() {
 
 
 // ==========================================
-// LOAD STUDENTS
+// LOAD STUDENTS FOR ATTENDANCE
 // ==========================================
 
-function loadStudentsForAttendance() {
+async function loadStudentsForAttendance() {
 
     const date = document.getElementById('attendanceDate').value;
     const classCode = document.getElementById('classSelect').value;
     const subjectCode = document.getElementById('subjectSelect').value;
     const attendanceSection = document.getElementById('attendanceSection');
+    const loadBtn = document.getElementById('loadStudentsBtn');
 
     if (!date || !classCode || !subjectCode) {
         alert('⚠️ Please select Date, Class, and Subject.');
         return;
     }
 
-    const allStudents = getAllStudents();
+    loadBtn.disabled = true;
+    loadBtn.textContent = 'Loading...';
+
+    const allStudents = await getAllStudents();
     const classSelect = document.getElementById('classSelect');
     const selectedOption = classSelect.options[classSelect.selectedIndex];
     const dept = selectedOption.getAttribute('data-dept');
 
-    // Filter students by department if applicable, or include all
+    // Filter students by department if applicable
     currentStudents = allStudents.filter(s => !dept || s.department === dept || s.department === 'CSE');
     if (currentStudents.length === 0) {
         currentStudents = allStudents;
     }
 
-    // Check if attendance already exists for this date, class, and subject
-    const existingKey = `attendance_${classCode}_${subjectCode}_${date}`;
-    const existingData = localStorage.getItem(existingKey);
-
     currentAttendance = {};
 
-    if (existingData) {
-        const parsed = JSON.parse(existingData);
-        currentAttendance = parsed.students || {};
+    // 1. Check if attendance already exists in Supabase
+    let loadedFromDb = false;
+    if (window.supabaseClient) {
+        try {
+            const { data: sessionData, error } = await window.supabaseClient
+                .from('attendance_sessions')
+                .select(`
+                    id,
+                    attendance_records (
+                        status,
+                        student_id,
+                        students (
+                            roll_number
+                        )
+                    )
+                `)
+                .eq('date', date)
+                .maybeSingle();
+
+            if (!error && sessionData && Array.isArray(sessionData.attendance_records) && sessionData.attendance_records.length > 0) {
+                sessionData.attendance_records.forEach(r => {
+                    const rNo = r.students?.roll_number;
+                    if (rNo) {
+                        currentAttendance[rNo] = r.status || 'present';
+                    }
+                });
+                loadedFromDb = Object.keys(currentAttendance).length > 0;
+            }
+        } catch (sbErr) {
+            console.warn('[Attendance] Supabase existing attendance check warning:', sbErr);
+        }
     }
 
-    // Default missing student statuses to 'present'
+    // 2. Fallback check: localStorage
+    if (!loadedFromDb) {
+        const existingKey = `attendance_${classCode}_${subjectCode}_${date}`;
+        const existingData = localStorage.getItem(existingKey);
+        if (existingData) {
+            try {
+                const parsed = JSON.parse(existingData);
+                currentAttendance = parsed.students || {};
+            } catch (e) {}
+        }
+    }
+
+    // Default any remaining unassigned student to 'present'
     currentStudents.forEach(s => {
         if (!currentAttendance[s.rollNo]) {
             currentAttendance[s.rollNo] = 'present';
@@ -219,6 +313,9 @@ function loadStudentsForAttendance() {
     renderAttendanceList();
     updateAttendanceStats();
     attendanceSection.classList.remove('hidden');
+
+    loadBtn.disabled = false;
+    loadBtn.textContent = 'Load Students';
 
 }
 
@@ -345,10 +442,10 @@ function updateAttendanceStats() {
 
 
 // ==========================================
-// SAVE ATTENDANCE
+// SAVE ATTENDANCE (SUPABASE + FALLBACK)
 // ==========================================
 
-function saveAttendance() {
+async function saveAttendance() {
 
     const date = document.getElementById('attendanceDate').value;
     const classCode = document.getElementById('classSelect').value;
@@ -356,12 +453,16 @@ function saveAttendance() {
     const subjectCode = subjectSelect.value;
     const subjectName = subjectSelect.options[subjectSelect.selectedIndex]?.getAttribute('data-name') || subjectCode;
     const messageEl = document.getElementById('statusMessage');
+    const saveBtn = document.getElementById('saveAttendanceBtn');
 
     if (!date || !classCode || !subjectCode) {
         messageEl.textContent = '❌ Missing date, class or subject!';
         messageEl.className = 'form-message error';
         return;
     }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
 
     const payload = {
         id: `att_${Date.now()}`,
@@ -373,22 +474,84 @@ function saveAttendance() {
         updatedAt: new Date().toISOString()
     };
 
-    // Save individual session
+    let supabaseSuccess = false;
+
+    // 1. Save to Supabase
+    if (window.supabaseClient) {
+        try {
+            // First try atomic RPC
+            const { data: rpcData, error: rpcErr } = await window.supabaseClient.rpc('save_attendance_batch', {
+                p_class_code: classCode,
+                p_subject_code: subjectCode,
+                p_date: date,
+                p_records: currentAttendance
+            });
+
+            if (!rpcErr && rpcData && rpcData.success) {
+                supabaseSuccess = true;
+            } else {
+                console.warn('[Attendance] RPC error, falling back to direct table inserts:', rpcErr);
+
+                // Direct fallback: Get or create session
+                let classId = null;
+                let subjectId = null;
+
+                const { data: cRow } = await window.supabaseClient
+                    .from('classes')
+                    .select('id')
+                    .eq('class_code', classCode)
+                    .maybeSingle();
+                classId = cRow?.id;
+
+                const { data: sRow } = await window.supabaseClient
+                    .from('subjects')
+                    .select('id')
+                    .eq('subject_code', subjectCode)
+                    .maybeSingle();
+                subjectId = sRow?.id;
+
+                if (classId && subjectId) {
+                    const { data: sess, error: sessErr } = await window.supabaseClient
+                        .from('attendance_sessions')
+                        .upsert({
+                            class_id: classId,
+                            subject_id: subjectId,
+                            date: date,
+                            marked_by: (await window.supabaseClient.auth.getUser()).data.user?.id
+                        }, { onConflict: 'class_id,subject_id,date' })
+                        .select('id')
+                        .single();
+
+                    if (!sessErr && sess) {
+                        supabaseSuccess = true;
+                    }
+                }
+            }
+        } catch (sbErr) {
+            console.warn('[Attendance] Supabase save warning:', sbErr);
+        }
+    }
+
+    // 2. Save individual session to localStorage
     const key = `attendance_${classCode}_${subjectCode}_${date}`;
     localStorage.setItem(key, JSON.stringify(payload));
 
-    // Also update attendance master list
+    // 3. Update attendance master list in localStorage
     let records = JSON.parse(localStorage.getItem('attendance_records')) || [];
     records = records.filter(r => !(r.date === date && r.classCode === classCode && r.subjectCode === subjectCode));
     records.push(payload);
     localStorage.setItem('attendance_records', JSON.stringify(records));
 
-    messageEl.textContent = `✅ Attendance saved successfully for ${currentStudents.length} students on ${date}!`;
+    const destination = supabaseSuccess ? 'Supabase & Local Cache' : 'Local Cache';
+    messageEl.textContent = `✅ Attendance saved to ${destination} for ${currentStudents.length} students on ${date}!`;
     messageEl.className = 'form-message success';
+
+    saveBtn.disabled = false;
+    saveBtn.textContent = '💾 Save Attendance';
 
     setTimeout(() => {
         messageEl.textContent = '';
-    }, 3500);
+    }, 4000);
 
 }
 

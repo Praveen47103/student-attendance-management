@@ -1,23 +1,22 @@
-// ==========================================
-// APPLY DARK MODE FROM STORAGE
-// ==========================================
+// ==============================================================================
+// ADMIN ATTENDANCE REPORTS & ANALYTICS (PHASE 7)
+// ==============================================================================
+// Connected to Supabase attendance tables with shortage analysis,
+// dynamic filtering, CSV export, and local storage fallback.
+// ==============================================================================
 
+// Apply Dark Mode from Storage
 function applyDarkModeFromStorage() {
     const isDarkMode = localStorage.getItem('darkMode') === 'true';
     if (isDarkMode) {
         document.documentElement.setAttribute('data-theme', 'dark');
     }
 }
-
 applyDarkModeFromStorage();
 
 
-// ==========================================
-// LOGIN VALIDATION
-// ==========================================
-
+// Login Validation
 document.addEventListener('DOMContentLoaded', function () {
-
     const savedAdmin = localStorage.getItem('loggedInAdmin');
     const savedStudent = localStorage.getItem('loggedInStudent');
 
@@ -27,31 +26,27 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     initializeReportsPage();
-
 });
 
 
-// ==========================================
-// INITIALIZE REPORTS PAGE
-// ==========================================
-
+// Initialize Reports Page
 function initializeReportsPage() {
-
     setupMenuButton();
     setupLogoutButton();
     setupDateInputs();
     setupGenerateButton();
-    generateReport(); // Initial load
+    setupExportButton();
 
+    // Initial load
+    generateReport();
+
+    // Subscribe to Realtime attendance updates
+    setupRealtimeReports();
 }
 
 
-// ==========================================
-// DEFAULT DATES
-// ==========================================
-
+// Setup Default Date Range (Current Month)
 function setupDateInputs() {
-
     const startInput = document.getElementById('startDate');
     const endInput = document.getElementById('endDate');
 
@@ -60,57 +55,121 @@ function setupDateInputs() {
 
     endInput.value = today.toISOString().split('T')[0];
     startInput.value = firstDay.toISOString().split('T')[0];
-
 }
 
 
-// ==========================================
-// GENERATE REPORT BUTTON
-// ==========================================
-
+// Setup Generate Button
 function setupGenerateButton() {
-
     const btn = document.getElementById('generateReportBtn');
-    btn.addEventListener('click', generateReport);
-
+    if (btn) btn.addEventListener('click', () => generateReport());
 }
 
 
-// ==========================================
-// GET ALL ATTENDANCE RECORDS
-// ==========================================
+// Setup CSV Export Button
+function setupExportButton() {
+    const btn = document.getElementById('exportCsvBtn');
+    if (btn) btn.addEventListener('click', exportReportToCSV);
+}
 
-function getAllAttendanceRecords() {
 
-    const records = [];
+// Fetch All Attendance Records (Supabase + Local Cache)
+async function getAllAttendanceRecords() {
+    const recordsMap = {};
 
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith('attendance_') && key !== 'attendance_records') {
-            try {
-                const data = JSON.parse(localStorage.getItem(key));
-                if (data && data.students) {
-                    records.push(data);
-                }
-            } catch (e) {
-                console.error("Error parsing attendance record:", key, e);
+    // 1. Fetch from Supabase if connected
+    if (window.supabaseClient) {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('attendance_sessions')
+                .select(`
+                    id,
+                    date,
+                    classes ( class_code ),
+                    subjects ( subject_code, subject_name ),
+                    attendance_records (
+                        status,
+                        students ( id, roll_number, name )
+                    )
+                `)
+                .order('date', { ascending: false });
+
+            if (!error && Array.isArray(data)) {
+                data.forEach(sess => {
+                    const classCode = sess.classes?.class_code || 'CSE-A';
+                    const subjectCode = sess.subjects?.subject_code || 'General';
+                    const subjectName = sess.subjects?.subject_name || subjectCode;
+                    const sessionDate = sess.date;
+
+                    const studentsMap = {};
+                    if (Array.isArray(sess.attendance_records)) {
+                        sess.attendance_records.forEach(rec => {
+                            const roll = rec.students?.roll_number;
+                            if (roll) {
+                                studentsMap[roll] = rec.status === 'Present' ? 'present' : 'absent';
+                            }
+                        });
+                    }
+
+                    const key = `${classCode}_${subjectCode}_${sessionDate}`;
+                    recordsMap[key] = {
+                        date: sessionDate,
+                        classCode: classCode,
+                        subjectCode: subjectCode,
+                        subjectName: subjectName,
+                        students: studentsMap
+                    };
+                });
             }
+        } catch (err) {
+            console.warn('Error querying Supabase attendance sessions:', err);
         }
     }
 
-    return records;
+    // 2. Merge with LocalStorage attendance records
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('attendance_') && key !== 'attendance_records') {
+            try {
+                const data = JSON.parse(localStorage.getItem(key));
+                if (data && data.students && data.date) {
+                    const sessionKey = `${data.classCode || 'CSE-A'}_${data.subjectCode || 'General'}_${data.date}`;
+                    if (!recordsMap[sessionKey]) {
+                        recordsMap[sessionKey] = data;
+                    }
+                }
+            } catch (e) {}
+        }
+    }
 
+    return Object.values(recordsMap);
 }
 
 
-// ==========================================
-// GET STUDENTS
-// ==========================================
+// Get Students List (Supabase + LocalStorage Fallback)
+async function getStudentsList() {
+    if (window.supabaseClient) {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('students')
+                .select('roll_number, name, department')
+                .order('roll_number', { ascending: true });
 
-function getStudentsList() {
+            if (!error && Array.isArray(data) && data.length > 0) {
+                return data.map(s => ({
+                    rollNo: s.roll_number,
+                    name: s.name,
+                    department: s.department || 'CSE'
+                }));
+            }
+        } catch (e) {}
+    }
 
     const stored = localStorage.getItem('adminStudentsList');
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+        try {
+            return JSON.parse(stored);
+        } catch (e) {}
+    }
 
     return [
         { rollNo: "23RU1A0501", name: "A.D.SATHISH REDDY", department: "CSE" },
@@ -119,23 +178,39 @@ function getStudentsList() {
         { rollNo: "23RU1A0504", name: "AREKANTI NAVEEN KUMAR", department: "CSE" },
         { rollNo: "23RU1A0505", name: "AYYAPPA REDDY YAMINI", department: "CSE" }
     ];
-
 }
 
 
-// ==========================================
-// GENERATE REPORT
-// ==========================================
+// Realtime Reports Listener
+function setupRealtimeReports() {
+    if (!window.supabaseClient) return;
 
-function generateReport() {
+    try {
+        window.supabaseClient
+            .channel('realtime:reports_attendance')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'attendance_records' },
+                () => {
+                    console.log('🔄 Realtime attendance change detected! Refreshing reports...');
+                    generateReport();
+                }
+            )
+            .subscribe();
+    } catch (e) {}
+}
 
+
+// Generate Attendance Report & Analytics
+async function generateReport() {
     const reportType = document.getElementById('reportType').value;
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
 
-    let records = getAllAttendanceRecords();
+    let records = await getAllAttendanceRecords();
+    const allStudents = await getStudentsList();
 
-    // Filter by date range if provided
+    // Filter by date range
     if (startDate) {
         records = records.filter(r => r.date >= startDate);
     }
@@ -167,18 +242,13 @@ function generateReport() {
     document.getElementById('totalAbsent').textContent = totalAbsent;
     document.getElementById('overallPercentage').textContent = overallPct + '%';
 
-    // Render Detailed Table
-    renderDetailedTable(reportType, records);
-
+    // Render Detailed Report Table
+    renderDetailedTable(reportType, records, allStudents);
 }
 
 
-// ==========================================
-// RENDER DETAILED TABLE
-// ==========================================
-
-function renderDetailedTable(reportType, records) {
-
+// Render Detailed Table by Type
+function renderDetailedTable(reportType, records, allStudents) {
     const tableSection = document.getElementById('reportTable');
     const tableHead = document.getElementById('reportTableHead');
     const tableBody = document.getElementById('reportTableBody');
@@ -186,8 +256,10 @@ function renderDetailedTable(reportType, records) {
     tableSection.classList.remove('hidden');
     tableBody.innerHTML = '';
 
-    if (reportType === 'student') {
-        // STUDENT-WISE REPORT
+    if (reportType === 'student' || reportType === 'shortage') {
+        // STUDENT-WISE OR ATTENDANCE SHORTAGE REPORT (<75%)
+        const isShortage = reportType === 'shortage';
+
         tableHead.innerHTML = `
             <tr>
                 <th>Roll Number</th>
@@ -196,13 +268,12 @@ function renderDetailedTable(reportType, records) {
                 <th>Present</th>
                 <th>Absent</th>
                 <th>Percentage</th>
+                ${isShortage ? '<th>Shortage Recovery Advice</th>' : ''}
             </tr>
         `;
 
-        const students = getStudentsList();
         const studentStats = {};
-
-        students.forEach(s => {
+        (allStudents || []).forEach(s => {
             studentStats[s.rollNo] = {
                 rollNo: s.rollNo,
                 name: s.name,
@@ -226,11 +297,21 @@ function renderDetailedTable(reportType, records) {
             }
         });
 
-        const list = Object.values(studentStats);
+        let list = Object.values(studentStats);
 
-        if (list.length === 0 || records.length === 0) {
-            // Provide default view if no records yet
-            tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #888;">No attendance sessions recorded for this filter. Please mark attendance first.</td></tr>`;
+        // Filter for shortage if requested
+        if (isShortage) {
+            list = list.filter(s => {
+                const pct = s.total > 0 ? (s.present / s.total) * 100 : 0;
+                return pct < 75;
+            });
+        }
+
+        if (list.length === 0) {
+            const emptyMsg = isShortage
+                ? '🎉 Excellent! No students have attendance below the 75% threshold in this range.'
+                : 'No attendance records found for this date range.';
+            tableBody.innerHTML = `<tr><td colspan="${isShortage ? 7 : 6}" style="text-align: center; padding: 25px; color: #888;">${emptyMsg}</td></tr>`;
             return;
         }
 
@@ -238,14 +319,22 @@ function renderDetailedTable(reportType, records) {
             const pct = s.total > 0 ? Math.round((s.present / s.total) * 100) : 0;
             const pctClass = pct >= 75 ? 'percentage-good' : (pct >= 65 ? 'percentage-warning' : 'percentage-danger');
 
+            let recoveryAdvice = '';
+            if (isShortage) {
+                // Formula to reach 75%: (present + x) / (total + x) >= 0.75 => x = ceil(3*total - 4*present)
+                const needed = Math.max(1, Math.ceil(3 * s.total - 4 * s.present));
+                recoveryAdvice = `<td style="color: #e74c3c; font-weight: 600;">⚠️ Needs ${needed} consecutive class${needed > 1 ? 'es' : ''}</td>`;
+            }
+
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td><strong>${s.rollNo}</strong></td>
-                <td>${s.name}</td>
+                <td><strong>${escapeHtml(s.rollNo)}</strong></td>
+                <td>${escapeHtml(s.name)}</td>
                 <td>${s.total}</td>
                 <td>${s.present}</td>
                 <td>${s.absent}</td>
                 <td class="${pctClass}">${pct}%</td>
+                ${recoveryAdvice}
             `;
             tableBody.appendChild(row);
         });
@@ -264,7 +353,6 @@ function renderDetailedTable(reportType, records) {
         `;
 
         const subjectStats = {};
-
         records.forEach(r => {
             const key = r.subjectCode || 'General';
             if (!subjectStats[key]) {
@@ -300,8 +388,8 @@ function renderDetailedTable(reportType, records) {
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td><strong>${sub.code}</strong></td>
-                <td>${sub.name}</td>
+                <td><strong>${escapeHtml(sub.code)}</strong></td>
+                <td>${escapeHtml(sub.name)}</td>
                 <td>${sub.sessions}</td>
                 <td>${sub.present}</td>
                 <td>${sub.absent}</td>
@@ -323,7 +411,6 @@ function renderDetailedTable(reportType, records) {
         `;
 
         const classStats = {};
-
         records.forEach(r => {
             const key = r.classCode || 'CSE-A';
             if (!classStats[key]) {
@@ -358,7 +445,7 @@ function renderDetailedTable(reportType, records) {
 
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td><strong>${cls.code}</strong></td>
+                <td><strong>${escapeHtml(cls.code)}</strong></td>
                 <td>${cls.sessions}</td>
                 <td>${cls.present}</td>
                 <td>${cls.absent}</td>
@@ -399,8 +486,8 @@ function renderDetailedTable(reportType, records) {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${r.date}</td>
-                <td><strong>${r.classCode || 'CSE-A'}</strong></td>
-                <td>${r.subjectName || r.subjectCode || 'General'}</td>
+                <td><strong>${escapeHtml(r.classCode || 'CSE-A')}</strong></td>
+                <td>${escapeHtml(r.subjectName || r.subjectCode || 'General')}</td>
                 <td>${present}</td>
                 <td>${absent}</td>
                 <td class="${pctClass}">${pct}%</td>
@@ -408,16 +495,68 @@ function renderDetailedTable(reportType, records) {
             tableBody.appendChild(row);
         });
     }
-
 }
 
 
-// ==========================================
-// MENU BUTTON
-// ==========================================
+// Export Current Report to CSV
+function exportReportToCSV() {
+    const tableHead = document.getElementById('reportTableHead');
+    const tableBody = document.getElementById('reportTableBody');
 
+    if (!tableHead || !tableBody) return;
+
+    const rows = [];
+
+    // Header Row
+    const headers = [];
+    tableHead.querySelectorAll('th').forEach(th => {
+        headers.push(`"${th.textContent.trim().replace(/"/g, '""')}"`);
+    });
+    rows.push(headers.join(','));
+
+    // Body Rows
+    tableBody.querySelectorAll('tr').forEach(tr => {
+        const cells = [];
+        tr.querySelectorAll('td').forEach(td => {
+            cells.push(`"${td.textContent.trim().replace(/"/g, '""')}"`);
+        });
+        if (cells.length > 0) {
+            rows.push(cells.join(','));
+        }
+    });
+
+    if (rows.length <= 1) {
+        alert('⚠️ No data to export.');
+        return;
+    }
+
+    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(rows.join('\n'));
+    const link = document.createElement('a');
+    const reportType = document.getElementById('reportType').value;
+    const dateStr = new Date().toISOString().split('T')[0];
+
+    link.setAttribute('href', csvContent);
+    link.setAttribute('download', `attendance_report_${reportType}_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+
+// Helper: Escape HTML
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+
+// Navigation & Logout
 function setupMenuButton() {
-
     const menuButton = document.getElementById('menuButton');
     const sidebar = document.getElementById('sidebar');
 
@@ -432,16 +571,9 @@ function setupMenuButton() {
             sidebar.classList.remove('mobile-open');
         }
     });
-
 }
 
-
-// ==========================================
-// LOGOUT BUTTON
-// ==========================================
-
 function setupLogoutButton() {
-
     const logoutButton = document.getElementById('logoutButton');
     if (!logoutButton) return;
 
@@ -449,8 +581,10 @@ function setupLogoutButton() {
         if (confirm('🚪 Are you sure you want to logout?')) {
             localStorage.removeItem('loggedInAdmin');
             localStorage.removeItem('loggedInStudent');
+            if (window.supabaseClient?.auth) {
+                window.supabaseClient.auth.signOut().catch(() => {});
+            }
             window.location.href = 'index.html';
         }
     });
-
 }

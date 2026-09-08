@@ -75,6 +75,21 @@ function loadDashboardData() {
     document.getElementById('avgAttendance').textContent = avgAttendance + '%';
     document.getElementById('pendingLeaves').textContent = pendingLeaves;
 
+    // Fetch live pending count from Supabase if connected
+    if (window.supabaseClient) {
+        window.supabaseClient
+            .from('leave_requests')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'Pending')
+            .then(({ count, error }) => {
+                if (!error && count !== null && count !== undefined) {
+                    const el = document.getElementById('pendingLeaves');
+                    if (el) el.textContent = count;
+                }
+            })
+            .catch(() => {});
+    }
+
 }
 
 

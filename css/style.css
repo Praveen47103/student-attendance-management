@@ -4131,4 +4131,628 @@ html[data-theme="dark"] .admin-table td {
 
 html[data-theme="dark"] .admin-table tbody tr:hover {
     background: rgba(102, 126, 234, 0.05);
-}
+}
+
+/* ==========================================
+   NOTIFICATION BELL & DROPDOWN (PHASE 6)
+========================================== */
+
+.notification-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-right: 12px;
+}
+
+.notification-bell-btn {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: background 0.2s ease, transform 0.15s ease;
+    color: inherit;
+    outline: none;
+}
+
+.notification-bell-btn:hover {
+    background: rgba(102, 126, 234, 0.12);
+    transform: scale(1.05);
+}
+
+.notification-bell-btn:active {
+    transform: scale(0.95);
+}
+
+.notification-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #e74c3c;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    border-radius: 9px;
+    text-align: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 4px rgba(231, 76, 60, 0.4);
+    animation: badgePop 0.3s ease;
+}
+
+.notification-badge.hidden {
+    display: none !important;
+}
+
+@keyframes badgePop {
+    0% { transform: scale(0); }
+    80% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.notification-dropdown {
+    position: absolute;
+    top: 50px;
+    right: 0;
+    width: 360px;
+    max-width: 90vw;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15), 0 3px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: dropdownFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notification-dropdown.hidden {
+    display: none !important;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid #edf2f7;
+    background: #f8fafc;
+}
+
+.notification-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notification-title-wrap h4 {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+    color: #1e293b;
+}
+
+.unread-count-badge {
+    background: rgba(102, 126, 234, 0.15);
+    color: #667eea;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.mark-all-read-btn {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+
+.mark-all-read-btn:hover {
+    background: rgba(102, 126, 234, 0.1);
+    text-decoration: underline;
+}
+
+.notification-list {
+    max-height: 330px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.notification-item:hover {
+    background: #f8fafc;
+}
+
+.notification-item.unread {
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.notification-item.unread:hover {
+    background: rgba(102, 126, 234, 0.09);
+}
+
+.notification-icon {
+    font-size: 20px;
+    line-height: 1;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 3px 0;
+    line-height: 1.3;
+}
+
+.notification-message {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0 0 5px 0;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.notification-time {
+    font-size: 10px;
+    color: #94a3b8;
+}
+
+.notification-unread-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #667eea;
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.notification-empty {
+    padding: 35px 20px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.notification-empty-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.notification-empty p {
+    font-size: 13px;
+    margin: 0;
+}
+
+.notification-footer {
+    padding: 8px 14px;
+    background: #f8fafc;
+    border-top: 1px solid #edf2f7;
+    text-align: center;
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+/* Dark Mode Support */
+html[data-theme="dark"] .notification-dropdown {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+}
+
+html[data-theme="dark"] .notification-header,
+html[data-theme="dark"] .notification-footer {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+html[data-theme="dark"] .notification-title-wrap h4 {
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .notification-item {
+    border-color: #334155;
+}
+
+html[data-theme="dark"] .notification-item:hover {
+    background: #334155;
+}
+
+html[data-theme="dark"] .notification-item.unread {
+    background: rgba(102, 126, 234, 0.15);
+}
+
+html[data-theme="dark"] .notification-title {
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .notification-message {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .notification-time {
+    color: #64748b;
+}
+
+/* ==========================================
+   AI ATTENDANCE ASSISTANT (PHASE 7)
+========================================== */
+
+.ai-assistant-launcher {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 99998;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 11px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.ai-assistant-launcher:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 12px 28px rgba(102, 126, 234, 0.55);
+}
+
+.ai-assistant-launcher:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.ai-assistant-launcher .ai-icon {
+    font-size: 18px;
+    animation: aiPulse 2.5s infinite ease-in-out;
+}
+
+@keyframes aiPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15) rotate(5deg); }
+}
+
+.ai-chat-window {
+    position: fixed;
+    bottom: 84px;
+    right: 24px;
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    height: 530px;
+    max-height: calc(100vh - 120px);
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2), 0 2px 10px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: chatSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ai-chat-window.hidden {
+    display: none !important;
+}
+
+@keyframes chatSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.ai-chat-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ai-chat-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ai-header-icon {
+    font-size: 24px;
+}
+
+.ai-chat-title-wrap h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.ai-chat-title-wrap span {
+    font-size: 11px;
+    opacity: 0.85;
+}
+
+.ai-close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+
+.ai-close-btn:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.ai-chips-container {
+    padding: 8px 12px;
+    background: #f8fafc;
+    border-bottom: 1px solid #edf2f7;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+}
+
+.ai-chips-container::-webkit-scrollbar {
+    display: none;
+}
+
+.ai-chip {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.ai-chip:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.ai-messages-thread {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #fdfdfd;
+}
+
+.ai-message {
+    display: flex;
+    gap: 8px;
+    max-width: 88%;
+}
+
+.ai-message.bot {
+    align-self: flex-start;
+}
+
+.ai-message.user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.ai-bubble {
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.ai-message.bot .ai-bubble {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-bottom-left-radius: 2px;
+}
+
+.ai-message.user .ai-bubble {
+    background: #667eea;
+    color: white;
+    border-bottom-right-radius: 2px;
+}
+
+.ai-bubble p {
+    margin: 0 0 6px 0;
+}
+
+.ai-bubble p:last-child {
+    margin: 0;
+}
+
+.ai-bubble ul {
+    margin: 4px 0 6px 16px;
+    padding: 0;
+}
+
+.ai-bubble strong {
+    color: inherit;
+    font-weight: 600;
+}
+
+.ai-typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    background: #f1f5f9;
+    border-radius: 12px;
+    width: fit-content;
+}
+
+.ai-dot {
+    width: 6px;
+    height: 6px;
+    background: #94a3b8;
+    border-radius: 50%;
+    animation: typingBounce 1.4s infinite ease-in-out both;
+}
+
+.ai-dot:nth-child(1) { animation-delay: -0.32s; }
+.ai-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes typingBounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
+
+.ai-input-area {
+    padding: 10px 12px;
+    border-top: 1px solid #edf2f7;
+    background: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-input-field {
+    flex: 1;
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.ai-input-field:focus {
+    border-color: #667eea;
+}
+
+.ai-send-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: background 0.15s, transform 0.1s;
+    flex-shrink: 0;
+}
+
+.ai-send-btn:hover {
+    background: #5a67d8;
+    transform: scale(1.05);
+}
+
+.ai-send-btn:active {
+    transform: scale(0.95);
+}
+
+/* Dark Mode for AI Assistant */
+html[data-theme="dark"] .ai-chat-window {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .ai-chips-container {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+html[data-theme="dark"] .ai-chip {
+    background: #1e293b;
+    border-color: #334155;
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .ai-messages-thread {
+    background: #1e293b;
+}
+
+html[data-theme="dark"] .ai-message.bot .ai-bubble {
+    background: #334155;
+    color: #f1f5f9;
+}
+
+html[data-theme="dark"] .ai-input-area {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+html[data-theme="dark"] .ai-input-field {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+

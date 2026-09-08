@@ -218,15 +218,15 @@ document
 // LOGIN BUTTON
 // ==========================================
 
-loginButton.addEventListener("click", function () {
+loginButton.addEventListener("click", async function () {
 
     if (loginType.value === "student") {
 
-        studentLoginFunction();
+        await studentLoginFunction();
 
     } else {
 
-        adminLoginFunction();
+        await adminLoginFunction();
 
     }
 
@@ -237,26 +237,87 @@ loginButton.addEventListener("click", function () {
 // STUDENT LOGIN FUNCTION
 // ==========================================
 
-function studentLoginFunction() {
+async function studentLoginFunction() {
 
     const enteredRollNo = rollNumber.value.trim().toUpperCase();
     const enteredPassword = studentPassword.value.trim();
 
 
     // Empty field check
-
     if (enteredRollNo === "" || enteredPassword === "") {
-
         showMessage(
             "Please enter roll number and password.",
             "red"
         );
-
         return;
     }
 
+    loginButton.disabled = true;
+    loginButton.textContent = "Logging in...";
 
-    // Find student
+    // 1. Try Supabase Auth first if client is available
+    if (window.supabaseClient) {
+        try {
+            const email = enteredRollNo.includes("@") ? enteredRollNo.toLowerCase() : `${enteredRollNo.toLowerCase()}@college.edu`;
+            const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: enteredPassword
+            });
+
+            if (!error && data.user) {
+                // Fetch profile to verify role
+                const { data: profile } = await window.supabaseClient
+                    .from("profiles")
+                    .select("id, role, full_name, email")
+                    .eq("id", data.user.id)
+                    .single();
+
+                if (profile && profile.role === "admin") {
+                    showMessage("This account is an Administrator. Please select 'Admin' to login.", "red");
+                    await window.supabaseClient.auth.signOut();
+                    loginButton.disabled = false;
+                    loginButton.textContent = "Login";
+                    return;
+                }
+
+                // Fetch student details from students table if present
+                const { data: studentRecord } = await window.supabaseClient
+                    .from("students")
+                    .select("id, roll_number, full_name, department, current_year, current_semester")
+                    .eq("profile_id", data.user.id)
+                    .maybeSingle();
+
+                const studentName = profile?.full_name || studentRecord?.full_name || enteredRollNo;
+                const roll = studentRecord?.roll_number || enteredRollNo;
+
+                const loggedInStudent = {
+                    rollNo: roll,
+                    name: studentName,
+                    department: studentRecord?.department || "CSE",
+                    year: studentRecord?.current_year ? `${studentRecord.current_year}th Year` : "4th Year",
+                    semester: studentRecord?.current_semester ? `${studentRecord.current_semester}th Semester` : "7th Semester",
+                    loginType: "student",
+                    supabaseId: data.user.id
+                };
+
+                localStorage.setItem("loggedInStudent", JSON.stringify(loggedInStudent));
+                localStorage.removeItem("loggedInAdmin");
+
+                showMessage("Login successful! Welcome " + loggedInStudent.name, "green");
+
+                setTimeout(function () {
+                    window.location.href = "students.html";
+                }, 800);
+                return;
+            } else if (error) {
+                console.warn("[Auth] Supabase student login failed:", error.message, "Checking fallback...");
+            }
+        } catch (sbErr) {
+            console.warn("[Auth] Supabase login error:", sbErr);
+        }
+    }
+
+    // 2. Fallback: Local demo credential check
     const allStudents = JSON.parse(localStorage.getItem("adminStudentsList")) || students;
 
     const student = allStudents.find(function (s) {
@@ -264,75 +325,53 @@ function studentLoginFunction() {
         return rNo.toUpperCase() === enteredRollNo;
     });
 
-
-    // Roll number not found
-
     if (!student) {
-
         showMessage(
             "Invalid roll number.",
             "red"
         );
-
+        loginButton.disabled = false;
+        loginButton.textContent = "Login";
         return;
     }
-
-
-    // Password check
-    // Check for stored password first, then fall back to default
 
     const roll = student.rollNo || student.rollNumber;
     const storedPassword = localStorage.getItem(`password_${roll}`);
     const validPassword = storedPassword || STUDENT_PASSWORD;
 
     if (enteredPassword !== validPassword) {
-
         showMessage(
             "Incorrect password.",
             "red"
         );
-
+        loginButton.disabled = false;
+        loginButton.textContent = "Login";
         return;
     }
 
-
-    // ==========================================
-    // LOGIN SUCCESS
-    // ==========================================
-
     const loggedInStudent = {
-
-         rollNo: roll,
-         name : student.name || student.studentName,
-         department: student.department || "CSE",
-         year: student.year || "4th Year",
-         semester: student.semester || "7th Semester",
-         loginType: "student"
-
+        rollNo: roll,
+        name: student.name || student.studentName,
+        department: student.department || "CSE",
+        year: student.year || "4th Year",
+        semester: student.semester || "7th Semester",
+        loginType: "student"
     };
-
-
-    // Save student information
 
     localStorage.setItem(
         "loggedInStudent",
         JSON.stringify(loggedInStudent)
     );
-
+    localStorage.removeItem("loggedInAdmin");
 
     showMessage(
         "Login successful! Welcome " + loggedInStudent.name,
         "green"
     );
 
-
-    // Redirect
-
     setTimeout(function () {
-
         window.location.href = "students.html";
-
-    }, 1000);
+    }, 800);
 
 }
 
@@ -341,56 +380,87 @@ function studentLoginFunction() {
 // ADMIN LOGIN FUNCTION
 // ==========================================
 
-function adminLoginFunction() {
+async function adminLoginFunction() {
 
     const username = adminUsername.value.trim();
     const password = adminPassword.value.trim();
 
-
-    // Empty field check
-
     if (username === "" || password === "") {
-
         showMessage(
             "Please enter username and password.",
             "red"
         );
-
         return;
     }
 
+    loginButton.disabled = true;
+    loginButton.textContent = "Logging in...";
 
-    // Check admin details (check stored password or default)
+    // 1. Try Supabase Auth first if client is available
+    if (window.supabaseClient) {
+        try {
+            const email = username.includes("@") ? username.toLowerCase() : `${username.toLowerCase()}@college.edu`;
+            const { data, error } = await window.supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (!error && data.user) {
+                // Fetch profile to verify admin role
+                const { data: profile } = await window.supabaseClient
+                    .from("profiles")
+                    .select("id, role, full_name, email")
+                    .eq("id", data.user.id)
+                    .single();
+
+                const role = profile?.role || "student";
+                if (role !== "admin" && role !== "teacher") {
+                    showMessage("Access denied: You do not have administrator permissions.", "red");
+                    await window.supabaseClient.auth.signOut();
+                    loginButton.disabled = false;
+                    loginButton.textContent = "Login";
+                    return;
+                }
+
+                localStorage.setItem("loggedInAdmin", "true");
+                localStorage.removeItem("loggedInStudent");
+
+                showMessage("Admin login successful!", "green");
+
+                setTimeout(function () {
+                    window.location.href = "admin-dashboard.html";
+                }, 800);
+                return;
+            } else if (error) {
+                console.warn("[Auth] Supabase admin login failed:", error.message, "Checking fallback...");
+            }
+        } catch (sbErr) {
+            console.warn("[Auth] Supabase admin login error:", sbErr);
+        }
+    }
+
+    // 2. Fallback: Local demo credential check
     const validAdminPassword = localStorage.getItem("adminPassword") || ADMIN_PASSWORD;
 
     if (
-        username === ADMIN_USERNAME &&
+        username.toLowerCase() === ADMIN_USERNAME.toLowerCase() &&
         password === validAdminPassword
     ) {
-
-
-        // Save admin login
 
         localStorage.setItem(
             "loggedInAdmin",
             "true"
         );
-
+        localStorage.removeItem("loggedInStudent");
 
         showMessage(
             "Admin login successful!",
             "green"
         );
 
-
-        // Redirect
-
         setTimeout(function () {
-
             window.location.href = "admin-dashboard.html";
-
-        }, 1000);
-
+        }, 800);
 
     } else {
 
@@ -398,6 +468,8 @@ function adminLoginFunction() {
             "Invalid admin username or password.",
             "red"
         );
+        loginButton.disabled = false;
+        loginButton.textContent = "Login";
 
     }
 
@@ -430,4 +502,83 @@ document.addEventListener("keydown", function (event) {
     }
 
 });
+
+
+// ==========================================
+// FORGOT PASSWORD MODAL FUNCTIONALITY
+// ==========================================
+
+const forgotPasswordBtn = document.getElementById("forgotPasswordBtn");
+const forgotPasswordModal = document.getElementById("forgotPasswordModal");
+const closeForgotModal = document.getElementById("closeForgotModal");
+const cancelResetBtn = document.getElementById("cancelResetBtn");
+const submitResetBtn = document.getElementById("submitResetBtn");
+const resetEmail = document.getElementById("resetEmail");
+const resetMessage = document.getElementById("resetMessage");
+
+if (forgotPasswordBtn && forgotPasswordModal) {
+
+    forgotPasswordBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        forgotPasswordModal.style.display = "flex";
+        if (resetMessage) resetMessage.textContent = "";
+        if (resetEmail) {
+            resetEmail.value = "";
+            resetEmail.focus();
+        }
+    });
+
+    const hideForgotModal = function () {
+        forgotPasswordModal.style.display = "none";
+    };
+
+    if (closeForgotModal) closeForgotModal.addEventListener("click", hideForgotModal);
+    if (cancelResetBtn) cancelResetBtn.addEventListener("click", hideForgotModal);
+
+    if (submitResetBtn && resetEmail) {
+        submitResetBtn.addEventListener("click", async function () {
+            const rawVal = resetEmail.value.trim();
+            if (!rawVal) {
+                resetMessage.textContent = "Please enter your email or roll number.";
+                resetMessage.style.color = "red";
+                return;
+            }
+
+            const targetEmail = rawVal.includes("@") ? rawVal.toLowerCase() : `${rawVal.toLowerCase()}@college.edu`;
+
+            submitResetBtn.disabled = true;
+            submitResetBtn.textContent = "Sending...";
+            resetMessage.textContent = "";
+
+            if (!window.supabaseClient) {
+                resetMessage.textContent = "Password reset service is not available.";
+                resetMessage.style.color = "red";
+                submitResetBtn.disabled = false;
+                submitResetBtn.textContent = "Send Reset Link";
+                return;
+            }
+
+            try {
+                const { error } = await window.supabaseClient.auth.resetPasswordForEmail(targetEmail, {
+                    redirectTo: window.location.origin + window.location.pathname
+                });
+
+                if (error) {
+                    resetMessage.textContent = error.message || "Failed to send reset link.";
+                    resetMessage.style.color = "red";
+                } else {
+                    resetMessage.textContent = "✅ Reset link sent! Please check your email inbox.";
+                    resetMessage.style.color = "green";
+                    setTimeout(hideForgotModal, 3500);
+                }
+            } catch (err) {
+                resetMessage.textContent = "Error sending reset email: " + (err.message || err);
+                resetMessage.style.color = "red";
+            } finally {
+                submitResetBtn.disabled = false;
+                submitResetBtn.textContent = "Send Reset Link";
+            }
+        });
+    }
+}
 

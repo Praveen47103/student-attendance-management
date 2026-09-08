@@ -43,6 +43,8 @@ document.addEventListener('DOMContentLoaded', function () {
 // INITIALIZE PAGE
 // ==========================================
 
+let currentStudentUuid = null;
+
 function initializeLeavePage() {
 
     const student = getLoggedInStudent();
@@ -71,10 +73,6 @@ function initializeLeavePage() {
         menuBtn.addEventListener('click', toggleMobileMenu);
     }
 
-    // Load and display leave requests and stats
-    displayLeaveRequests();
-    updateLeaveStatistics();
-
     // Set minimum date to today
     const today = new Date().toISOString().split('T')[0];
     const leaveFrom = document.getElementById('leaveFrom');
@@ -94,6 +92,14 @@ function initializeLeavePage() {
             }
         });
     }
+
+    // 1. Render immediately from local cache
+    displayLeaveRequests();
+    updateLeaveStatistics();
+
+    // 2. Load live requests from Supabase & subscribe to Realtime
+    loadLiveLeaveRequests();
+    setupRealtimeLeave();
 
 }
 
@@ -116,10 +122,139 @@ function getStudentRollNumber(student) {
 
 
 // ==========================================
+// RESOLVE STUDENT DATABASE UUID
+// ==========================================
+
+async function getStudentUuid(rollNo) {
+    if (currentStudentUuid) return currentStudentUuid;
+    if (!window.supabaseClient || !rollNo) return null;
+
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('students')
+            .select('id')
+            .eq('roll_number', rollNo)
+            .maybeSingle();
+
+        if (data && data.id) {
+            currentStudentUuid = data.id;
+            return currentStudentUuid;
+        }
+    } catch (err) {
+        console.warn('Could not fetch student UUID from Supabase:', err);
+    }
+    return null;
+}
+
+
+// ==========================================
+// LOAD LIVE LEAVE REQUESTS FROM SUPABASE
+// ==========================================
+
+async function loadLiveLeaveRequests() {
+
+    if (!window.supabaseClient) return;
+
+    const student = getLoggedInStudent();
+    const currentRoll = getStudentRollNumber(student);
+    if (!currentRoll) return;
+
+    try {
+        const studentId = await getStudentUuid(currentRoll);
+        if (!studentId) return;
+
+        const { data, error } = await window.supabaseClient
+            .from('leave_requests')
+            .select('*')
+            .eq('student_id', studentId)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.warn('Supabase leave_requests query error:', error);
+            return;
+        }
+
+        if (data && Array.isArray(data)) {
+            const mapped = data.map(item => ({
+                id: item.id,
+                studentRoll: currentRoll,
+                studentName: student.name || 'Student',
+                type: item.type,
+                fromDate: item.from_date,
+                toDate: item.to_date,
+                days: item.days,
+                reason: item.reason,
+                description: item.description || '',
+                status: item.status,
+                reviewRemarks: item.review_remarks || '',
+                reviewedAt: item.reviewed_at || '',
+                submittedDate: item.created_at ? item.created_at.split('T')[0] : '',
+                submittedTime: item.created_at ? new Date(item.created_at).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                }) : ''
+            }));
+
+            // Sync with local storage
+            let allStored = [];
+            try {
+                allStored = JSON.parse(localStorage.getItem('leaveRequests')) || [];
+            } catch (e) {
+                allStored = [];
+            }
+            const otherStudentsLeaves = allStored.filter(r => (r.studentRoll || '').toUpperCase() !== currentRoll);
+            const merged = [...mapped, ...otherStudentsLeaves];
+            localStorage.setItem('leaveRequests', JSON.stringify(merged));
+
+            // Render live data
+            renderLeaveTable(mapped);
+            updateLeaveStatsFromList(mapped);
+        }
+
+    } catch (err) {
+        console.error('Error loading live leave requests:', err);
+    }
+
+}
+
+
+// ==========================================
+// REALTIME LEAVE SUBSCRIPTION
+// ==========================================
+
+function setupRealtimeLeave() {
+
+    if (!window.supabaseClient) return;
+
+    try {
+        window.supabaseClient
+            .channel('realtime:student_leave')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'leave_requests' },
+                payload => {
+                    console.log('🔄 Realtime leave change detected:', payload);
+                    loadLiveLeaveRequests();
+                }
+            )
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('📡 Realtime connected for student leave requests');
+                }
+            });
+    } catch (err) {
+        console.warn('Could not initialize Realtime for leave requests:', err);
+    }
+
+}
+
+
+// ==========================================
 // HANDLE LEAVE SUBMISSION
 // ==========================================
 
-function handleLeaveSubmit(e) {
+async function handleLeaveSubmit(e) {
 
     e.preventDefault();
 
@@ -164,7 +299,7 @@ function handleLeaveSubmit(e) {
     // Calculate days count inclusive
     const days = Math.round((toDate.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
-    // Get all existing leave requests
+    // Get all existing leave requests to check overlap
     let leaveRequests = [];
     try {
         leaveRequests = JSON.parse(localStorage.getItem('leaveRequests')) || [];
@@ -172,35 +307,74 @@ function handleLeaveSubmit(e) {
         leaveRequests = [];
     }
 
-    // Filter ONLY active (Pending or Approved) requests belonging to THIS exact student
+    // Filter ONLY active (Pending or Approved) requests belonging to THIS student
     const studentActiveLeaves = leaveRequests.filter(req => {
         const reqRoll = (req.studentRoll || '').trim().toUpperCase();
         const isActive = req.status === 'Pending' || req.status === 'Approved';
         return reqRoll === currentRoll && isActive;
     });
 
-    // Check for date overlap ONLY within the current student's active requests
+    // Check for date overlap
     const overlappingRequest = studentActiveLeaves.find(req => {
         if (!req.fromDate || !req.toDate) return false;
         const reqFrom = new Date(req.fromDate + 'T00:00:00');
         const reqTo = new Date(req.toDate + 'T00:00:00');
 
         if (isNaN(reqFrom.getTime()) || isNaN(reqTo.getTime())) return false;
-
-        // Interval overlap condition: fromDate <= reqTo && toDate >= reqFrom
         return (fromDate <= reqTo && toDate >= reqFrom);
     });
 
     if (overlappingRequest) {
-        messageEl.textContent = `❌ You already have an existing ${overlappingRequest.status} leave request for these dates (${overlappingRequest.fromDate} to ${overlappingRequest.toDate}).`;
+        messageEl.textContent = `❌ You already have an active ${overlappingRequest.status} leave for these dates (${overlappingRequest.fromDate} to ${overlappingRequest.toDate}).`;
         messageEl.className = 'form-message error';
         return;
     }
 
-    // Create new leave request
+    // Prepare new leave object
     const now = new Date();
+    let newLeaveId = Date.now().toString();
+
+    // 1. SAVE TO SUPABASE
+    if (window.supabaseClient) {
+        try {
+            messageEl.textContent = '⏳ Submitting leave request to Supabase...';
+            messageEl.className = 'form-message';
+
+            const studentId = await getStudentUuid(currentRoll);
+
+            if (studentId) {
+                const { data: inserted, error } = await window.supabaseClient
+                    .from('leave_requests')
+                    .insert([{
+                        student_id: studentId,
+                        type: leaveType,
+                        from_date: leaveFrom,
+                        to_date: leaveTo,
+                        days: days,
+                        reason: leaveReason,
+                        description: leaveDescription,
+                        status: 'Pending'
+                    }])
+                    .select()
+                    .single();
+
+                if (error) {
+                    console.error('Supabase leave insert error:', error);
+                    messageEl.textContent = `⚠️ Database Notice: ${error.message}. Saved to local cache.`;
+                    messageEl.className = 'form-message error';
+                } else if (inserted && inserted.id) {
+                    newLeaveId = inserted.id;
+                    console.log('✅ Leave saved to Supabase with ID:', newLeaveId);
+                }
+            }
+        } catch (err) {
+            console.error('Error saving leave to Supabase:', err);
+        }
+    }
+
+    // 2. SAVE TO LOCAL STORAGE (DUAL-MODE CACHE)
     const newLeave = {
-        id: Date.now(),
+        id: newLeaveId,
         studentRoll: currentRoll,
         studentName: student.name || 'Student',
         type: leaveType,
@@ -218,7 +392,6 @@ function handleLeaveSubmit(e) {
         })
     };
 
-    // Save to localStorage
     leaveRequests.push(newLeave);
     localStorage.setItem('leaveRequests', JSON.stringify(leaveRequests));
 
@@ -249,7 +422,7 @@ function handleLeaveSubmit(e) {
 
 
 // ==========================================
-// DISPLAY LEAVE REQUESTS
+// DISPLAY LEAVE REQUESTS (FROM STORAGE)
 // ==========================================
 
 function displayLeaveRequests() {
@@ -269,12 +442,23 @@ function displayLeaveRequests() {
         req => (req.studentRoll || '').trim().toUpperCase() === currentRoll
     );
 
+    renderLeaveTable(studentLeaves);
+
+}
+
+
+// ==========================================
+// RENDER LEAVE TABLE
+// ==========================================
+
+function renderLeaveTable(studentLeaves) {
+
     const tableBody = document.getElementById('leaveTableBody');
     const noLeaveMessage = document.getElementById('noLeaveMessage');
 
     if (!tableBody) return;
 
-    if (studentLeaves.length === 0) {
+    if (!studentLeaves || studentLeaves.length === 0) {
         tableBody.innerHTML = '';
         if (noLeaveMessage) noLeaveMessage.style.display = 'block';
         return;
@@ -283,12 +467,17 @@ function displayLeaveRequests() {
     if (noLeaveMessage) noLeaveMessage.style.display = 'none';
 
     // Sort newest first
-    const sortedLeaves = [...studentLeaves].reverse();
+    const sortedLeaves = [...studentLeaves].sort((a, b) => {
+        const da = new Date(a.submittedDate || a.fromDate || 0);
+        const db = new Date(b.submittedDate || b.fromDate || 0);
+        return db - da;
+    });
 
     tableBody.innerHTML = sortedLeaves.map(leave => {
 
         const statusClass = getStatusClass(leave.status);
         const statusIcon = getStatusIcon(leave.status);
+        const safeId = typeof leave.id === 'string' ? `'${leave.id}'` : leave.id;
 
         return `
             <tr class="leave-row">
@@ -303,8 +492,8 @@ function displayLeaveRequests() {
                         ${leave.type}
                     </span>
                 </td>
-                <td class="reason-cell" title="${leave.reason}">
-                    ${leave.reason}
+                <td class="reason-cell" title="${escapeHtml(leave.reason)}">
+                    ${escapeHtml(leave.reason)}
                 </td>
                 <td class="days-cell">
                     ${leave.days} day${leave.days > 1 ? 's' : ''}
@@ -325,7 +514,7 @@ function displayLeaveRequests() {
                     ${leave.status === 'Pending' ? `
                         <button 
                             class="action-btn delete-btn"
-                            onclick="deleteLeaveRequest(${leave.id})"
+                            onclick="deleteLeaveRequest(${safeId})"
                             title="Cancel / Delete pending request"
                         >
                             🗑️
@@ -333,7 +522,7 @@ function displayLeaveRequests() {
                     ` : `
                         <button 
                             class="action-btn view-btn"
-                            onclick="viewLeaveDetails(${leave.id})"
+                            onclick="viewLeaveDetails(${safeId})"
                             title="View details"
                         >
                             👁️
@@ -364,18 +553,22 @@ function updateLeaveStatistics() {
         leaveRequests = [];
     }
 
-    // Filter requests for current student
     const studentLeaves = leaveRequests.filter(
         req => (req.studentRoll || '').trim().toUpperCase() === currentRoll
     );
 
-    // Calculate statistics
+    updateLeaveStatsFromList(studentLeaves);
+
+}
+
+function updateLeaveStatsFromList(studentLeaves) {
+
     let totalDays = 0;
     let pendingCount = 0;
     let approvedCount = 0;
     let rejectedCount = 0;
 
-    studentLeaves.forEach(leave => {
+    (studentLeaves || []).forEach(leave => {
         if (leave.status === 'Approved') {
             totalDays += Number(leave.days) || 0;
             approvedCount++;
@@ -386,7 +579,6 @@ function updateLeaveStatistics() {
         }
     });
 
-    // Update UI
     const totalDaysEl = document.getElementById('totalLeaveDays');
     const pendingEl = document.getElementById('pendingRequests');
     const approvedEl = document.getElementById('approvedLeaves');
@@ -404,12 +596,31 @@ function updateLeaveStatistics() {
 // DELETE LEAVE REQUEST
 // ==========================================
 
-window.deleteLeaveRequest = function (leaveId) {
+window.deleteLeaveRequest = async function (leaveId) {
 
     if (!confirm('❓ Are you sure you want to cancel and delete this pending leave request?')) {
         return;
     }
 
+    // 1. Delete from Supabase
+    if (window.supabaseClient) {
+        try {
+            const { error } = await window.supabaseClient
+                .from('leave_requests')
+                .delete()
+                .eq('id', leaveId);
+
+            if (error) {
+                console.warn('Supabase delete error:', error);
+            } else {
+                console.log('✅ Leave request deleted from Supabase:', leaveId);
+            }
+        } catch (err) {
+            console.error('Error deleting from Supabase:', err);
+        }
+    }
+
+    // 2. Delete from localStorage
     let leaveRequests = [];
     try {
         leaveRequests = JSON.parse(localStorage.getItem('leaveRequests')) || [];
@@ -417,7 +628,7 @@ window.deleteLeaveRequest = function (leaveId) {
         leaveRequests = [];
     }
 
-    leaveRequests = leaveRequests.filter(req => req.id !== leaveId);
+    leaveRequests = leaveRequests.filter(req => String(req.id) !== String(leaveId));
     localStorage.setItem('leaveRequests', JSON.stringify(leaveRequests));
 
     displayLeaveRequests();
@@ -439,10 +650,15 @@ window.viewLeaveDetails = function (leaveId) {
         leaveRequests = [];
     }
 
-    const leave = leaveRequests.find(req => req.id === leaveId);
+    const leave = leaveRequests.find(req => String(req.id) === String(leaveId));
     if (!leave) return;
 
-    alert(`📄 LEAVE REQUEST DETAILS\n\nType: ${leave.type}\nFrom: ${formatDate(leave.fromDate)}\nTo: ${formatDate(leave.toDate)}\nDays: ${leave.days}\nReason: ${leave.reason}\nStatus: ${leave.status}\nSubmitted: ${leave.submittedDate} ${leave.submittedTime}\n\n${leave.description ? `Description:\n${leave.description}` : ''}`);
+    let reviewText = '';
+    if (leave.reviewRemarks) {
+        reviewText = `\nReview Remarks: ${leave.reviewRemarks}`;
+    }
+
+    alert(`📄 LEAVE REQUEST DETAILS\n\nType: ${leave.type}\nFrom: ${formatDate(leave.fromDate)}\nTo: ${formatDate(leave.toDate)}\nDays: ${leave.days}\nReason: ${leave.reason}\nStatus: ${leave.status}${reviewText}\nSubmitted: ${leave.submittedDate} ${leave.submittedTime}\n\n${leave.description ? `Description:\n${leave.description}` : ''}`);
 
 };
 
@@ -488,6 +704,16 @@ function getStatusIcon(status) {
     }
 }
 
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 
 // ==========================================
 // LOGOUT HANDLER
@@ -498,6 +724,9 @@ function handleLogout() {
     if (confirm('🚪 Are you sure you want to logout?')) {
         localStorage.removeItem('loggedInStudent');
         localStorage.removeItem('loggedInAdmin');
+        if (window.supabaseClient?.auth) {
+            window.supabaseClient.auth.signOut().catch(() => {});
+        }
         window.location.href = 'index.html';
     }
 

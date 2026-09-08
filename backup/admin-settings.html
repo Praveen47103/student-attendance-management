@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Settings - Admin Panel</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+
+<body>
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-logo">
+
+            <div class="logo-icon">
+                👑
+            </div>
+
+            <div>
+                <h2>Admin Panel</h2>
+                <span>Management</span>
+            </div>
+
+        </div>
+
+        <nav class="navigation">
+
+            <a href="admin-dashboard.html" class="nav-link">
+                <span>🏠</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="admin-students.html" class="nav-link">
+                <span>👥</span>
+                <span>Students</span>
+            </a>
+
+            <a href="admin-classes.html" class="nav-link">
+                <span>📚</span>
+                <span>Classes</span>
+            </a>
+
+            <a href="admin-attendance.html" class="nav-link">
+                <span>📋</span>
+                <span>Attendance</span>
+            </a>
+
+            <a href="admin-reports.html" class="nav-link">
+                <span>📊</span>
+                <span>Reports</span>
+            </a>
+
+            <a href="admin-faculty.html" class="nav-link">
+                <span>👨‍🏫</span>
+                <span>Faculty</span>
+            </a>
+
+            <a href="admin-timetable.html" class="nav-link">
+                <span>📅</span>
+                <span>Timetable</span>
+            </a>
+
+            <a href="admin-leave.html" class="nav-link">
+                <span>📝</span>
+                <span>Leave Requests</span>
+            </a>
+
+            <a href="admin-settings.html" class="nav-link active">
+                <span>⚙️</span>
+                <span>Settings</span>
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <button id="logoutButton" class="logout-btn">
+                🚪
+                <span>Logout</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+
+    <main class="main-content">
+
+        <!-- TOP BAR -->
+
+        <header class="topbar">
+
+            <button id="menuButton" class="menu-button">
+                ☰
+            </button>
+
+            <div class="topbar-title">
+
+                <h1>Settings</h1>
+                <p>Manage admin account settings</p>
+
+            </div>
+
+            <div class="topbar-user">
+
+                <div class="user-avatar">
+                    👑
+                </div>
+
+                <div class="user-info">
+
+                    <strong id="adminName">Administrator</strong>
+                    <span>Admin Account</span>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE CONTENT -->
+
+        <div class="page-content">
+
+            <!-- DARK MODE SECTION -->
+
+            <div class="settings-card">
+
+                <div class="settings-header">
+                    🌙 Dark Mode
+                </div>
+
+                <div class="settings-body">
+
+                    <div class="settings-item">
+
+                        <div class="setting-info">
+                            <h3>Dark Mode</h3>
+                            <p>Enable dark mode for comfortable night-time viewing</p>
+                        </div>
+
+                        <div class="toggle-switch">
+                            <input type="checkbox" id="darkModeToggle" class="toggle-checkbox">
+                            <label for="darkModeToggle" class="toggle-label"></label>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- CHANGE PASSWORD SECTION -->
+
+            <div class="settings-card">
+
+                <div class="settings-header">
+                    🔐 Change Password
+                </div>
+
+                <div class="settings-body">
+
+                    <form id="passwordForm" class="password-form">
+
+                        <div class="form-group">
+
+                            <label for="currentPassword">
+                                Current Password <span class="required">*</span>
+                            </label>
+
+                            <div class="password-input-group">
+                                <input
+                                    type="password"
+                                    id="currentPassword"
+                                    placeholder="Enter current password"
+                                    required
+                                >
+                                <button
+                                    type="button"
+                                    class="password-toggle-btn"
+                                    id="toggleCurrentPassword"
+                                >
+                                    👁️
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="newPassword">
+                                New Password <span class="required">*</span>
+                            </label>
+
+                            <div class="password-input-group">
+                                <input
+                                    type="password"
+                                    id="newPassword"
+                                    placeholder="Enter new password"
+                                    required
+                                >
+                                <button
+                                    type="button"
+                                    class="password-toggle-btn"
+                                    id="toggleNewPassword"
+                                >
+                                    👁️
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="confirmPassword">
+                                Confirm Password <span class="required">*</span>
+                            </label>
+
+                            <div class="password-input-group">
+                                <input
+                                    type="password"
+                                    id="confirmPassword"
+                                    placeholder="Confirm new password"
+                                    required
+                                >
+                                <button
+                                    type="button"
+                                    class="password-toggle-btn"
+                                    id="toggleConfirmPassword"
+                                >
+                                    👁️
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <p id="passwordMessage" class="form-message"></p>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                🔒 Change Password
+                            </button>
+                            <button type="reset" class="btn btn-secondary">
+                                ↺ Clear
+                            </button>
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+
+            <!-- LOGOUT SECTION -->
+
+            <div class="settings-card danger">
+
+                <div class="settings-header danger">
+                    🚪 Logout
+                </div>
+
+                <div class="settings-body">
+
+                    <div class="settings-item">
+
+                        <div class="setting-info">
+                            <h3>Logout from Account</h3>
+                            <p>End your current admin session</p>
+                        </div>
+
+                        <button id="logoutConfirmBtn" class="btn btn-danger">
+                            🚪 Logout Now
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- JavaScript -->
+
+    <script src="js/admin-settings.js"></script>
+
+</body>
+
+</html>

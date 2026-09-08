@@ -156,29 +156,16 @@ function setupPasswordToggle(buttonId, inputId) {
 
 }
 
-function handlePasswordChange(e) {
+async function handlePasswordChange(e) {
 
     e.preventDefault();
 
-    const student = JSON.parse(localStorage.getItem('loggedInStudent'));
+    const student = JSON.parse(localStorage.getItem('loggedInStudent')) || {};
 
     const currentPassword = document.getElementById('currentPassword').value;
     const newPassword = document.getElementById('newPassword').value;
     const confirmPassword = document.getElementById('confirmPassword').value;
     const messageEl = document.getElementById('passwordMessage');
-
-    // Get the stored password for this student
-    const storedPassword = getStudentPassword(student.rollNo);
-
-    // Validate current password
-    if (currentPassword !== storedPassword) {
-        showMessage(
-            messageEl,
-            '❌ Current password is incorrect',
-            'error'
-        );
-        return;
-    }
 
     // Validate new password length
     if (newPassword.length < 6) {
@@ -210,8 +197,48 @@ function handlePasswordChange(e) {
         return;
     }
 
-    // Save new password
-    saveStudentPassword(student.rollNo, newPassword);
+    // Check if Supabase session is active
+    let supabaseSessionActive = false;
+    if (window.supabaseClient) {
+        try {
+            const { data: { session } } = await window.supabaseClient.auth.getSession();
+            if (session && session.user) {
+                supabaseSessionActive = true;
+                const { error: updateErr } = await window.supabaseClient.auth.updateUser({
+                    password: newPassword
+                });
+
+                if (updateErr) {
+                    showMessage(
+                        messageEl,
+                        '❌ ' + (updateErr.message || 'Failed to update password.'),
+                        'error'
+                    );
+                    return;
+                }
+            }
+        } catch (sbErr) {
+            console.warn('[Settings] Supabase password update warning:', sbErr);
+        }
+    }
+
+    // If not using Supabase Auth session, validate with local stored password
+    if (!supabaseSessionActive) {
+        const storedPassword = getStudentPassword(student.rollNo);
+        if (currentPassword !== storedPassword) {
+            showMessage(
+                messageEl,
+                '❌ Current password is incorrect',
+                'error'
+            );
+            return;
+        }
+    }
+
+    // Save new password to local fallback as well
+    if (student.rollNo) {
+        saveStudentPassword(student.rollNo, newPassword);
+    }
 
     // Show success message
     showMessage(

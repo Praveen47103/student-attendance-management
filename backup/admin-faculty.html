@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Faculty Management - Admin Panel</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+
+<body>
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-logo">
+
+            <div class="logo-icon">
+                👑
+            </div>
+
+            <div>
+                <h2>Admin Panel</h2>
+                <span>Management</span>
+            </div>
+
+        </div>
+
+        <nav class="navigation">
+
+            <a href="admin-dashboard.html" class="nav-link">
+                <span>🏠</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="admin-students.html" class="nav-link">
+                <span>👥</span>
+                <span>Students</span>
+            </a>
+
+            <a href="admin-classes.html" class="nav-link">
+                <span>📚</span>
+                <span>Classes</span>
+            </a>
+
+            <a href="admin-attendance.html" class="nav-link">
+                <span>📋</span>
+                <span>Attendance</span>
+            </a>
+
+            <a href="admin-reports.html" class="nav-link">
+                <span>📊</span>
+                <span>Reports</span>
+            </a>
+
+            <a href="admin-faculty.html" class="nav-link active">
+                <span>👨‍🏫</span>
+                <span>Faculty</span>
+            </a>
+
+            <a href="admin-timetable.html" class="nav-link">
+                <span>📅</span>
+                <span>Timetable</span>
+            </a>
+
+            <a href="admin-leave.html" class="nav-link">
+                <span>📝</span>
+                <span>Leave Requests</span>
+            </a>
+
+            <a href="admin-settings.html" class="nav-link">
+                <span>⚙️</span>
+                <span>Settings</span>
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <button id="logoutButton" class="logout-btn">
+                🚪
+                <span>Logout</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+
+    <main class="main-content">
+
+        <!-- TOP BAR -->
+
+        <header class="topbar">
+
+            <button id="menuButton" class="menu-button">
+                ☰
+            </button>
+
+            <div class="topbar-title">
+
+                <h1>Faculty Management</h1>
+                <p>Manage faculty directory, designations, and assigned subjects</p>
+
+            </div>
+
+            <div class="topbar-user">
+
+                <div class="user-avatar">
+                    👑
+                </div>
+
+                <div class="user-info">
+
+                    <strong id="adminName">Administrator</strong>
+                    <span>Admin Account</span>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE CONTENT -->
+
+        <div class="page-content">
+
+            <!-- ACTION & SEARCH BAR -->
+
+            <div class="action-bar">
+
+                <div class="filter-group" style="flex: 1;">
+
+                    <input
+                        type="text"
+                        id="searchFaculty"
+                        placeholder="🔍 Search faculty by name, ID, department, designation, subjects..."
+                        class="filter-input"
+                    >
+
+                    <select id="facultyDeptFilter" class="filter-select">
+                        <option value="">All Departments</option>
+                        <option value="CSE">CSE</option>
+                        <option value="ECE">ECE</option>
+                        <option value="MECH">MECH</option>
+                        <option value="CIVIL">CIVIL</option>
+                    </select>
+
+                </div>
+
+                <button id="addFacultyBtn" class="btn btn-primary" style="flex: 0 0 auto; white-space: nowrap;">
+                    ➕ Add Faculty
+                </button>
+
+            </div>
+
+
+            <!-- FACULTY DIRECTORY TABLE -->
+
+            <div class="table-section">
+
+                <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+
+                    <h3 style="font-size: 16px; color: #333; font-weight: 700;">👨‍🏫 Faculty Directory</h3>
+                    <span id="facultyCount" class="record-count" style="font-size: 13px; color: #667eea; font-weight: 600;">0 members</span>
+
+                </div>
+
+                <div class="table-container">
+
+                    <table class="admin-table">
+
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Faculty ID</th>
+                                <th>Faculty Name</th>
+                                <th>Department</th>
+                                <th>Designation</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Assigned Subjects</th>
+                                <th style="text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="facultyTableBody">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <div id="noFacultyMsg" class="no-data-message" style="display: none;">
+                    📭 No faculty members found
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- ADD / EDIT FACULTY MODAL -->
+
+    <div id="facultyModal" class="modal hidden">
+
+        <div class="modal-content modal-large">
+
+            <div class="modal-header">
+                <h2 id="facultyModalTitle">Add Faculty Member</h2>
+                <button class="modal-close" id="closeFacultyModal">✕</button>
+            </div>
+
+            <form id="facultyForm" class="modal-form">
+
+                <input type="hidden" id="facultyEditId">
+
+                <div class="form-grid-2">
+
+                    <div class="form-group">
+                        <label for="facultyId">Faculty ID *</label>
+                        <input
+                            type="text"
+                            id="facultyId"
+                            placeholder="e.g. FAC001"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="facultyName">Faculty Name *</label>
+                        <input
+                            type="text"
+                            id="facultyName"
+                            placeholder="e.g. Dr. Rajesh Sharma"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="facultyDept">Department *</label>
+                        <select id="facultyDept" required>
+                            <option value="">-- Select Department --</option>
+                            <option value="CSE">CSE (Computer Science)</option>
+                            <option value="ECE">ECE (Electronics)</option>
+                            <option value="MECH">MECH (Mechanical)</option>
+                            <option value="CIVIL">CIVIL (Civil)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="facultyDesignation">Designation *</label>
+                        <select id="facultyDesignation" required>
+                            <option value="">-- Select Designation --</option>
+                            <option value="Professor & HOD">Professor & HOD</option>
+                            <option value="Professor">Professor</option>
+                            <option value="Associate Professor">Associate Professor</option>
+                            <option value="Assistant Professor">Assistant Professor</option>
+                            <option value="Senior Lecturer">Senior Lecturer</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="facultyEmail">Email Address *</label>
+                        <input
+                            type="email"
+                            id="facultyEmail"
+                            placeholder="e.g. rajesh.sharma@college.edu"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="facultyPhone">Phone Number *</label>
+                        <input
+                            type="tel"
+                            id="facultyPhone"
+                            placeholder="e.g. +91 98765 43210"
+                            required
+                        >
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="facultySubjects">Assigned Subjects *</label>
+                        <input
+                            type="text"
+                            id="facultySubjects"
+                            placeholder="e.g. Web Technologies, Database Management Systems"
+                            required
+                        >
+                    </div>
+
+                </div>
+
+                <div id="facultyFormMessage" class="form-message"></div>
+
+                <div class="form-actions" style="display: flex; gap: 12px; margin-top: 10px;">
+                    <button type="submit" class="btn btn-primary">
+                        Save Faculty
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="cancelFacultyBtn">
+                        Cancel
+                    </button>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- JavaScript -->
+
+    <script src="js/admin-faculty.js"></script>
+
+</body>
+
+</html>

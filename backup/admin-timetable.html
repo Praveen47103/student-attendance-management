@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Timetable - Admin Panel</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+
+<body>
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-logo">
+
+            <div class="logo-icon">
+                👑
+            </div>
+
+            <div>
+                <h2>Admin Panel</h2>
+                <span>Management</span>
+            </div>
+
+        </div>
+
+        <nav class="navigation">
+
+            <a href="admin-dashboard.html" class="nav-link">
+                <span>🏠</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="admin-students.html" class="nav-link">
+                <span>👥</span>
+                <span>Students</span>
+            </a>
+
+            <a href="admin-classes.html" class="nav-link">
+                <span>📚</span>
+                <span>Classes</span>
+            </a>
+
+            <a href="admin-attendance.html" class="nav-link">
+                <span>📋</span>
+                <span>Attendance</span>
+            </a>
+
+            <a href="admin-reports.html" class="nav-link">
+                <span>📊</span>
+                <span>Reports</span>
+            </a>
+
+            <a href="admin-faculty.html" class="nav-link">
+                <span>👨‍🏫</span>
+                <span>Faculty</span>
+            </a>
+
+            <a href="admin-timetable.html" class="nav-link active">
+                <span>📅</span>
+                <span>Timetable</span>
+            </a>
+
+            <a href="admin-leave.html" class="nav-link">
+                <span>📝</span>
+                <span>Leave Requests</span>
+            </a>
+
+            <a href="admin-settings.html" class="nav-link">
+                <span>⚙️</span>
+                <span>Settings</span>
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <button id="logoutButton" class="logout-btn">
+                🚪
+                <span>Logout</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN CONTENT -->
+
+    <main class="main-content">
+
+        <!-- TOP BAR -->
+
+        <header class="topbar">
+
+            <button id="menuButton" class="menu-button">
+                ☰
+            </button>
+
+            <div class="topbar-title">
+
+                <h1>Timetable Management</h1>
+                <p>Manage class schedule</p>
+
+            </div>
+
+            <div class="topbar-user">
+
+                <div class="user-avatar">
+                    👑
+                </div>
+
+                <div class="user-info">
+
+                    <strong id="adminName">Administrator</strong>
+                    <span>Admin Account</span>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- PAGE CONTENT -->
+
+        <div class="page-content">
+
+            <!-- SELECTION -->
+
+            <div class="filter-section">
+
+                <div class="filter-group">
+
+                    <select id="classSelect" class="filter-select">
+                        <option value="">-- Select Class --</option>
+                    </select>
+
+                    <button id="addTimeSlotBtn" class="btn btn-primary">
+                        ➕ Add Time Slot
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- TIMETABLE GRID -->
+
+            <div class="timetable-section">
+
+                <h3 class="section-title">📅 Weekly Timetable</h3>
+
+                <div class="timetable-grid" id="timetableGrid">
+                    <!-- Timetable will be populated here -->
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!-- ADD TIME SLOT MODAL -->
+    <div id="timeSlotModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="timeSlotModalTitle">Add Timetable Slot</h2>
+                <button class="modal-close" id="closeTimeSlotModal">✕</button>
+            </div>
+            <form id="timeSlotForm" class="modal-form">
+                <div class="form-group">
+                    <label>Day *</label>
+                    <select id="slotDay" required>
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Period / Time Slot *</label>
+                    <select id="slotPeriod" required>
+                        <option value="09:00 - 10:00 AM">Period 1 (09:00 - 10:00 AM)</option>
+                        <option value="10:00 - 11:00 AM">Period 2 (10:00 - 11:00 AM)</option>
+                        <option value="11:15 - 12:15 PM">Period 3 (11:15 - 12:15 PM)</option>
+                        <option value="12:15 - 01:15 PM">Period 4 (12:15 - 01:15 PM)</option>
+                        <option value="02:00 - 03:00 PM">Period 5 (02:00 - 03:00 PM)</option>
+                        <option value="03:00 - 04:00 PM">Period 6 (03:00 - 04:00 PM)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Subject *</label>
+                    <select id="slotSubject" required>
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Faculty *</label>
+                    <select id="slotFaculty" required>
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Room / Lab *</label>
+                    <input type="text" id="slotRoom" placeholder="e.g. Room 402 / Lab 3" required>
+                </div>
+                <div id="slotFormMessage" class="form-message"></div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Slot</button>
+                    <button type="button" class="btn btn-secondary" id="cancelSlotBtn">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+
+    <script src="js/admin-timetable.js"></script>
+
+</body>
+
+</html>

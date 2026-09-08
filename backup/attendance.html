@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Attendance - Student Dashboard</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+
+<body>
+
+    <!-- ==========================================
+         SIDEBAR
+    =========================================== -->
+
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-logo">
+
+            <div class="logo-icon">
+                📚
+            </div>
+
+            <div>
+                <h2>Attendance</h2>
+                <span>Management System</span>
+            </div>
+
+        </div>
+
+
+        <!-- Navigation -->
+
+        <nav class="navigation">
+
+            <a href="students.html" class="nav-link">
+                <span>🏠</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="attendance.html" class="nav-link active">
+                <span>📊</span>
+                <span>Attendance</span>
+            </a>
+
+            <a href="calendar.html" class="nav-link">
+                <span>📅</span>
+                <span>Calendar</span>
+            </a>
+
+            <a href="reports.html" class="nav-link">
+                <span>📈</span>
+                <span>Reports</span>
+            </a>
+
+            <a href="student-details.html" class="nav-link">
+                <span>👤</span>
+                <span>My Profile</span>
+            </a>
+
+            <a href="leave.html" class="nav-link">
+                <span>📝</span>
+                <span>Leave Letter</span>
+            </a>
+
+            <a href="settings.html" class="nav-link">
+                <span>⚙️</span>
+                <span>Settings</span>
+            </a>
+
+        </nav>
+
+
+        <!-- Logout -->
+
+        <div class="sidebar-bottom">
+
+            <button
+                id="logoutButton"
+                class="logout-btn"
+            >
+                🚪
+                <span>Logout</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- ==========================================
+         MAIN CONTENT
+    =========================================== -->
+
+    <main class="main-content">
+
+
+        <!-- ======================================
+             TOP BAR
+        ======================================= -->
+
+        <header class="topbar">
+
+            <button
+                id="menuButton"
+                class="menu-button"
+            >
+                ☰
+            </button>
+
+
+            <div class="topbar-title">
+
+                <h1>Attendance Report</h1>
+
+                <p>
+                    Student Attendance Management System
+                </p>
+
+            </div>
+
+
+            <div class="topbar-user">
+
+                <div class="user-avatar">
+                    👤
+                </div>
+
+                <div class="user-info">
+
+                    <strong id="topStudentName">
+                        Student
+                    </strong>
+
+                    <span id="topStudentRoll">
+                        Roll Number
+                    </span>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ======================================
+             PAGE CONTENT
+        ======================================= -->
+
+        <section class="dashboard-content">
+
+
+            <!-- ==================================
+                 WELCOME CARD
+            =================================== -->
+
+            <div class="welcome-card">
+
+                <div class="welcome-text">
+
+                    <p class="welcome-small">
+                        Your Attendance 📊
+                    </p>
+
+                    <h2 id="studentName">
+                        Student
+                    </h2>
+
+                    <p>
+                        Detailed attendance report and statistics.
+                    </p>
+
+                </div>
+
+
+                <div class="welcome-icon">
+                    📈
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 ATTENDANCE OVERVIEW
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Attendance Overview</h2>
+
+            </div>
+
+
+            <div class="attendance-cards">
+
+
+                <!-- Overall -->
+
+                <div class="attendance-card overall">
+
+                    <div class="attendance-card-top">
+
+                        <span>
+                            📊
+                        </span>
+
+                        <small>
+                            Overall Percentage
+                        </small>
+
+                    </div>
+
+                    <h3 id="overallPercentage">
+                        82%
+                    </h3>
+
+                    <p>
+                        Attendance
+                    </p>
+
+                </div>
+
+
+                <!-- Present -->
+
+                <div class="attendance-card present">
+
+                    <div class="attendance-card-top">
+
+                        <span>
+                            ✅
+                        </span>
+
+                        <small>
+                            Classes Attended
+                        </small>
+
+                    </div>
+
+                    <h3 id="presentCount">
+                        82
+                    </h3>
+
+                    <p>
+                        Classes
+                    </p>
+
+                </div>
+
+
+                <!-- Absent -->
+
+                <div class="attendance-card absent">
+
+                    <div class="attendance-card-top">
+
+                        <span>
+                            ❌
+                        </span>
+
+                        <small>
+                            Classes Missed
+                        </small>
+
+                    </div>
+
+                    <h3 id="absentCount">
+                        18
+                    </h3>
+
+                    <p>
+                        Classes
+                    </p>
+
+                </div>
+
+
+                <!-- Total -->
+
+                <div class="attendance-card total">
+
+                    <div class="attendance-card-top">
+
+                        <span>
+                            📚
+                        </span>
+
+                        <small>
+                            Total Classes
+                        </small>
+
+                    </div>
+
+                    <h3 id="totalClasses">
+                        100
+                    </h3>
+
+                    <p>
+                        Classes Held
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 SUBJECT-WISE ATTENDANCE
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Subject-wise Attendance</h2>
+
+            </div>
+
+
+            <div class="subject-table-wrapper">
+
+                <table class="subject-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Subject Name</th>
+
+                            <th>Present</th>
+
+                            <th>Absent</th>
+
+                            <th>Total</th>
+
+                            <th>Percentage</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="subjectTableBody">
+
+                        <!-- JavaScript will insert subjects -->
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 ATTENDANCE STATUS
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Attendance Status</h2>
+
+            </div>
+
+
+            <div class="status-cards">
+
+                <div class="status-card status-good">
+
+                    <div class="status-icon">
+                        ✅
+                    </div>
+
+                    <div>
+
+                        <h4>Good Standing</h4>
+
+                        <p>
+                            Your attendance is above 75%
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="status-card status-info">
+
+                    <div class="status-icon">
+                        ℹ️
+                    </div>
+
+                    <div>
+
+                        <h4>Minimum Requirement</h4>
+
+                        <p>
+                            You need 75% attendance to be eligible
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="status-card status-info">
+
+                    <div class="status-icon">
+                        📅
+                    </div>
+
+                    <div>
+
+                        <h4>Last Updated</h4>
+
+                        <p id="lastUpdated">
+                            Today at 12:30 PM
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 STUDENT INFORMATION
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Your Information</h2>
+
+            </div>
+
+
+            <div class="student-info-grid">
+
+
+                <div class="info-card">
+
+                    <div class="info-icon">
+                        🆔
+                    </div>
+
+                    <div>
+
+                        <span>Roll Number</span>
+
+                        <strong id="rollNo">
+                            -
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <div class="info-icon">
+                        💻
+                    </div>
+
+                    <div>
+
+                        <span>Department</span>
+
+                        <strong id="department">
+                            CSE
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <div class="info-icon">
+                        🎓
+                    </div>
+
+                    <div>
+
+                        <span>Year</span>
+
+                        <strong id="year">
+                            4th Year
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <div class="info-icon">
+                        📚
+                    </div>
+
+                    <div>
+
+                        <span>Semester</span>
+
+                        <strong id="semester">
+                            7th Semester
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+    </main>
+
+
+    <!-- JavaScript -->
+
+    <script src="js/attendance.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Calendar - Student Dashboard</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+
+<body>
+
+    <!-- ==========================================
+         SIDEBAR
+    =========================================== -->
+
+    <aside class="sidebar" id="sidebar">
+
+        <div class="sidebar-logo">
+
+            <div class="logo-icon">
+                📚
+            </div>
+
+            <div>
+                <h2>Attendance</h2>
+                <span>Management System</span>
+            </div>
+
+        </div>
+
+
+        <!-- Navigation -->
+
+        <nav class="navigation">
+
+            <a href="students.html" class="nav-link">
+                <span>🏠</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="attendance.html" class="nav-link">
+                <span>📊</span>
+                <span>Attendance</span>
+            </a>
+
+            <a href="calendar.html" class="nav-link active">
+                <span>📅</span>
+                <span>Calendar</span>
+            </a>
+
+            <a href="reports.html" class="nav-link">
+                <span>📈</span>
+                <span>Reports</span>
+            </a>
+
+            <a href="student-details.html" class="nav-link">
+                <span>👤</span>
+                <span>My Profile</span>
+            </a>
+
+            <a href="leave.html" class="nav-link">
+                <span>📝</span>
+                <span>Leave Letter</span>
+            </a>
+
+            <a href="settings.html" class="nav-link">
+                <span>⚙️</span>
+                <span>Settings</span>
+            </a>
+
+        </nav>
+
+
+        <!-- Logout -->
+
+        <div class="sidebar-bottom">
+
+            <button
+                id="logoutButton"
+                class="logout-btn"
+            >
+                🚪
+                <span>Logout</span>
+            </button>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- ==========================================
+         MAIN CONTENT
+    =========================================== -->
+
+    <main class="main-content">
+
+
+        <!-- ======================================
+             TOP BAR
+        ======================================= -->
+
+        <header class="topbar">
+
+            <button
+                id="menuButton"
+                class="menu-button"
+            >
+                ☰
+            </button>
+
+
+            <div class="topbar-title">
+
+                <h1>Academic Calendar</h1>
+
+                <p>
+                    Student Attendance Management System
+                </p>
+
+            </div>
+
+
+            <div class="topbar-user">
+
+                <div class="user-avatar">
+                    👤
+                </div>
+
+                <div class="user-info">
+
+                    <strong id="topStudentName">
+                        Student
+                    </strong>
+
+                    <span id="topStudentRoll">
+                        Roll Number
+                    </span>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- ======================================
+             PAGE CONTENT
+        ======================================= -->
+
+        <section class="dashboard-content">
+
+
+            <!-- ==================================
+                 WELCOME CARD
+            =================================== -->
+
+            <div class="welcome-card">
+
+                <div class="welcome-text">
+
+                    <p class="welcome-small">
+                        Academic Calendar 📅
+                    </p>
+
+                    <h2 id="studentName">
+                        Student
+                    </h2>
+
+                    <p>
+                        Track classes and holidays at a glance.
+                    </p>
+
+                </div>
+
+
+                <div class="welcome-icon">
+                    🗓️
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 CALENDAR NAVIGATION
+            =================================== -->
+
+            <div class="calendar-header">
+
+                <button id="prevMonth" class="month-nav-btn">
+                    ← Previous
+                </button>
+
+                <h2 id="monthYear">
+                    January 2024
+                </h2>
+
+                <button id="nextMonth" class="month-nav-btn">
+                    Next →
+                </button>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 CALENDAR GRID
+            =================================== -->
+
+            <div class="calendar-wrapper">
+
+                <div class="calendar">
+
+                    <!-- Calendar Header with Days -->
+
+                    <div class="calendar-weekdays">
+
+                        <div class="weekday">Sunday</div>
+                        <div class="weekday">Monday</div>
+                        <div class="weekday">Tuesday</div>
+                        <div class="weekday">Wednesday</div>
+                        <div class="weekday">Thursday</div>
+                        <div class="weekday">Friday</div>
+                        <div class="weekday">Saturday</div>
+
+                    </div>
+
+
+                    <!-- Calendar Days -->
+
+                    <div class="calendar-days" id="calendarDays">
+
+                        <!-- JavaScript will insert calendar days -->
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 LEGEND
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Legend</h2>
+
+            </div>
+
+
+            <div class="legend-container">
+
+                <div class="legend-item">
+
+                    <div class="legend-box legend-holiday">
+                        🏠
+                    </div>
+
+                    <span>Holiday / Sunday</span>
+
+                </div>
+
+                <div class="legend-item">
+
+                    <div class="legend-box legend-class">
+                        ✅
+                    </div>
+
+                    <span>Class Attended</span>
+
+                </div>
+
+                <div class="legend-item">
+
+                    <div class="legend-box legend-absent">
+                        ❌
+                    </div>
+
+                    <span>Class Absent</span>
+
+                </div>
+
+                <div class="legend-item">
+
+                    <div class="legend-box legend-today">
+                        🔵
+                    </div>
+
+                    <span>Today</span>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 MONTHLY OVERVIEW
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Monthly Statistics</h2>
+
+            </div>
+
+
+            <div class="stats-grid">
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        📚
+                    </div>
+
+                    <div class="stat-content">
+
+                        <p class="stat-label">
+                            Classes Held
+                        </p>
+
+                        <h3 class="stat-value" id="classesHeld">
+                            22
+                        </h3>
+
+                    </div>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        ✅
+                    </div>
+
+                    <div class="stat-content">
+
+                        <p class="stat-label">
+                            Classes Attended
+                        </p>
+
+                        <h3 class="stat-value" id="classesAttended">
+                            20
+                        </h3>
+
+                    </div>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        ❌
+                    </div>
+
+                    <div class="stat-content">
+
+                        <p class="stat-label">
+                            Absences
+                        </p>
+
+                        <h3 class="stat-value" id="absences">
+                            2
+                        </h3>
+
+                    </div>
+
+                </div>
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        🏠
+                    </div>
+
+                    <div class="stat-content">
+
+                        <p class="stat-label">
+                            Holidays
+                        </p>
+
+                        <h3 class="stat-value" id="holidays">
+                            8
+                        </h3>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- ==================================
+                 STUDENT INFORMATION
+            =================================== -->
+
+            <div class="section-title">
+
+                <h2>Your Information</h2>
+
+            </div>
+
+
+            <div class="student-info-grid">
+
+
+                <div class="info-card">
+
+                    <div class="info-icon">
+                        🆔
+                    </div>
+
+                    <div>
+
+                        <span>Roll Number</span>
+
+                        <strong id="rollNo">
+                            -
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <div class="info-icon">
+                        💻
+                    </div>
+
+                    <div>
+
+                        <span>Department</span>
+
+                        <strong id="department">
+                            CSE
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <div class="info-icon">
+                        🎓
+                    </div>
+
+                    <div>
+
+                        <span>Year</span>
+
+                        <strong id="year">
+                            4th Year
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="info-card">
+
+                    <div class="info-icon">
+                        📚
+                    </div>
+
+                    <div>
+
+                        <span>Semester</span>
+
+                        <strong id="semester">
+                            7th Semester
+                        </strong>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+    </main>
+
+
+    <!-- JavaScript -->
+
+    <script src="js/calendar.js"></script>
+
+</body>
+
+</html>

@@ -42,18 +42,52 @@ function initializeStudentsPage() {
     setupFilterListeners();
     setupAddStudentButton();
     setupFormHandlers();
+    setupCsvImport();
     loadAllStudents();
 
 }
 
 
 // ==========================================
-// LOAD ALL STUDENTS
+// LOAD ALL STUDENTS (SUPABASE + FALLBACK)
 // ==========================================
 
-function loadAllStudents() {
+let currentStudentsCache = [];
 
-    const students = getStudentsList();
+async function loadAllStudents() {
+
+    let students = [];
+    let loadedFromDb = false;
+
+    if (window.supabaseClient) {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('students')
+                .select('*')
+                .order('roll_number', { ascending: true });
+
+            if (!error && Array.isArray(data) && data.length > 0) {
+                students = data.map(s => ({
+                    rollNo: s.roll_number,
+                    name: s.name || s.roll_number,
+                    department: s.department || 'CSE',
+                    year: s.year || '4th Year',
+                    id: s.id,
+                    dbId: s.id
+                }));
+                loadedFromDb = true;
+                localStorage.setItem('adminStudentsList', JSON.stringify(students));
+            }
+        } catch (sbErr) {
+            console.warn('[AdminStudents] Error fetching from Supabase, using local fallback:', sbErr);
+        }
+    }
+
+    if (!loadedFromDb) {
+        students = getStudentsList();
+    }
+
+    currentStudentsCache = students;
     displayStudents(students);
 
 }
@@ -176,7 +210,7 @@ function getDefaultStudents() {
 
 
 // ==========================================
-// GET STUDENTS LIST
+// GET STUDENTS LIST (LOCAL STORAGE)
 // ==========================================
 
 function getStudentsList() {
@@ -206,7 +240,7 @@ function displayStudents(students) {
 
     tbody.innerHTML = '';
 
-    if (students.length === 0) {
+    if (!students || students.length === 0) {
         noMsg.style.display = 'block';
         countEl.textContent = '0 students';
         return;
@@ -250,7 +284,7 @@ function setupFilterListeners() {
 
     function applyFilters() {
 
-        const students = getStudentsList();
+        const students = currentStudentsCache.length > 0 ? currentStudentsCache : getStudentsList();
         const search = searchInput.value.toLowerCase();
         const department = departmentFilter.value;
         const year = yearFilter.value;
@@ -310,14 +344,15 @@ function setupAddStudentButton() {
 
 
 // ==========================================
-// FORM HANDLERS
+// FORM HANDLERS (ADD / EDIT)
 // ==========================================
 
 function setupFormHandlers() {
 
     const form = document.getElementById('studentForm');
+    const saveBtn = form.querySelector('button[type="submit"]');
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
 
         e.preventDefault();
 
@@ -332,25 +367,63 @@ function setupFormHandlers() {
             return;
         }
 
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
         const students = getStudentsList();
         const existingIndex = students.findIndex(s => s.rollNo === rollNumber);
+        const isEdit = existingIndex >= 0;
 
-        if (existingIndex >= 0) {
-            // Edit existing
-            students[existingIndex] = { rollNo: rollNumber, name: studentName, department, year };
+        // 1. Sync to Supabase if connected
+        if (window.supabaseClient) {
+            try {
+                if (isEdit) {
+                    const { error } = await window.supabaseClient
+                        .from('students')
+                        .update({
+                            name: studentName,
+                            department: department,
+                            year: year
+                        })
+                        .eq('roll_number', rollNumber);
+
+                    if (error) console.warn('[AdminStudents] Supabase update warning:', error.message);
+                } else {
+                    const { error } = await window.supabaseClient
+                        .from('students')
+                        .insert({
+                            roll_number: rollNumber,
+                            name: studentName,
+                            department: department,
+                            year: year,
+                            semester: '7th Semester',
+                            section: 'A'
+                        });
+
+                    if (error) console.warn('[AdminStudents] Supabase insert warning:', error.message);
+                }
+            } catch (sbErr) {
+                console.warn('[AdminStudents] Supabase save error:', sbErr);
+            }
+        }
+
+        // 2. Sync to local storage
+        if (isEdit) {
+            students[existingIndex] = { ...students[existingIndex], rollNo: rollNumber, name: studentName, department, year };
             showMessage(messageEl, '✅ Student updated successfully', 'success');
         } else {
-            // Add new
             students.push({ rollNo: rollNumber, name: studentName, department, year });
             showMessage(messageEl, '✅ Student added successfully', 'success');
         }
 
         localStorage.setItem('adminStudentsList', JSON.stringify(students));
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Student';
 
         setTimeout(() => {
             document.getElementById('studentModal').classList.add('hidden');
             loadAllStudents();
-        }, 1200);
+        }, 1000);
 
     });
 
@@ -363,7 +436,7 @@ function setupFormHandlers() {
 
 window.editStudent = function (rollNo) {
 
-    const students = getStudentsList();
+    const students = currentStudentsCache.length > 0 ? currentStudentsCache : getStudentsList();
     const student = students.find(s => s.rollNo === rollNo);
 
     if (!student) return;
@@ -385,9 +458,22 @@ window.editStudent = function (rollNo) {
 // DELETE STUDENT
 // ==========================================
 
-window.deleteStudent = function (rollNo) {
+window.deleteStudent = async function (rollNo) {
 
     if (!confirm(`❓ Are you sure you want to delete student ${rollNo}?`)) return;
+
+    if (window.supabaseClient) {
+        try {
+            const { error } = await window.supabaseClient
+                .from('students')
+                .delete()
+                .eq('roll_number', rollNo);
+
+            if (error) console.warn('[AdminStudents] Supabase delete warning:', error.message);
+        } catch (sbErr) {
+            console.warn('[AdminStudents] Supabase delete error:', sbErr);
+        }
+    }
 
     let students = getStudentsList();
     students = students.filter(s => s.rollNo !== rollNo);
@@ -396,6 +482,161 @@ window.deleteStudent = function (rollNo) {
     loadAllStudents();
 
 };
+
+
+// ==========================================
+// CSV BULK IMPORT FUNCTIONALITY
+// ==========================================
+
+function setupCsvImport() {
+
+    const importBtn = document.getElementById('importCsvBtn');
+    const fileInput = document.getElementById('csvFileInput');
+
+    if (!importBtn || !fileInput) return;
+
+    importBtn.addEventListener('click', () => {
+        fileInput.value = '';
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+
+        try {
+            const text = await file.text();
+            const rows = parseCSV(text);
+            const validStudents = [];
+
+            for (const r of rows) {
+                const parsed = extractStudentFromRow(r);
+                if (parsed) validStudents.push(parsed);
+            }
+
+            if (validStudents.length === 0) {
+                alert('⚠️ No valid student records found in this CSV.\nExpected columns: Roll Number, Name, Department, Year');
+                return;
+            }
+
+            if (!confirm(`📥 Found ${validStudents.length} students in CSV file "${file.name}".\n\nDo you want to import them now?`)) {
+                return;
+            }
+
+            importBtn.disabled = true;
+            importBtn.textContent = 'Importing...';
+
+            // 1. Sync to Supabase
+            if (window.supabaseClient) {
+                try {
+                    const dbPayload = validStudents.map(s => ({
+                        roll_number: s.rollNo,
+                        name: s.name,
+                        department: s.department,
+                        year: s.year,
+                        semester: '7th Semester',
+                        section: 'A'
+                    }));
+
+                    const { error } = await window.supabaseClient
+                        .from('students')
+                        .upsert(dbPayload, { onConflict: 'roll_number' });
+
+                    if (error) console.warn('[AdminStudents] Supabase CSV upsert warning:', error.message);
+                } catch (sbErr) {
+                    console.warn('[AdminStudents] Supabase CSV upsert error:', sbErr);
+                }
+            }
+
+            // 2. Sync to local storage
+            const currentList = getStudentsList();
+            validStudents.forEach(newS => {
+                const idx = currentList.findIndex(s => s.rollNo === newS.rollNo);
+                if (idx >= 0) {
+                    currentList[idx] = { ...currentList[idx], ...newS };
+                } else {
+                    currentList.push(newS);
+                }
+            });
+
+            localStorage.setItem('adminStudentsList', JSON.stringify(currentList));
+
+            alert(`✅ Successfully imported ${validStudents.length} students!`);
+            loadAllStudents();
+
+        } catch (err) {
+            console.error('[AdminStudents] CSV parsing error:', err);
+            alert('❌ Failed to parse CSV: ' + err.message);
+        } finally {
+            importBtn.disabled = false;
+            importBtn.textContent = '📥 Import CSV';
+        }
+
+    });
+
+}
+
+function parseCSV(text) {
+    const lines = text.split(/\r\n|\n/).filter(line => line.trim().length > 0);
+    if (lines.length < 2) return [];
+
+    const headers = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase().replace(/[\s_-]/g, ''));
+    const rows = [];
+
+    for (let i = 1; i < lines.length; i++) {
+        const values = parseCSVLine(lines[i]);
+        if (values.length === 0 || (values.length === 1 && !values[0])) continue;
+
+        const row = {};
+        headers.forEach((h, idx) => {
+            row[h] = (values[idx] || '').trim();
+        });
+        rows.push(row);
+    }
+    return rows;
+}
+
+function parseCSVLine(text) {
+    const values = [];
+    let cur = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (c === '"') {
+            if (inQuotes && text[i + 1] === '"') {
+                cur += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+        } else if (c === ',' && !inQuotes) {
+            values.push(cur);
+            cur = '';
+        } else {
+            cur += c;
+        }
+    }
+    values.push(cur);
+    return values;
+}
+
+function extractStudentFromRow(row) {
+    const roll = row['rollnumber'] || row['rollno'] || row['roll'] || row['id'] || '';
+    const name = row['studentname'] || row['name'] || row['fullname'] || '';
+    const dept = row['department'] || row['dept'] || 'CSE';
+    const yr = row['year'] || '4th Year';
+
+    if (!roll || !name) return null;
+    return {
+        rollNo: roll.toUpperCase(),
+        roll_number: roll.toUpperCase(),
+        name: name,
+        department: dept,
+        year: yr
+    };
+}
 
 
 // ==========================================
