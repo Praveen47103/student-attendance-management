@@ -111,47 +111,51 @@ function setupPasswordForm() {
             return;
         }
 
-        let supabaseSessionActive = false;
-        if (window.supabaseClient) {
+        // Purge any legacy device-specific password in localStorage
+        localStorage.removeItem('adminPassword');
+
+        // Supabase Auth password update (Single Source of Truth)
+        if (window.supabaseClient && typeof isSupabaseConfigured === 'function' && isSupabaseConfigured()) {
             try {
-                const { data: { session } } = await window.supabaseClient.auth.getSession();
-                if (session && session.user) {
-                    supabaseSessionActive = true;
-                    const { error: updateErr } = await window.supabaseClient.auth.updateUser({
-                        password: newPass
-                    });
+                const { data: { session }, error: sessionErr } = await window.supabaseClient.auth.getSession();
 
-                    if (updateErr) {
-                        messageEl.textContent = '❌ ' + (updateErr.message || 'Failed to update admin password.');
-                        messageEl.className = 'form-message error';
-                        return;
-                    }
+                if (sessionErr || !session || !session.user) {
+                    messageEl.textContent = '❌ Active Supabase Admin session required. Please log out and sign in with your Admin credentials.';
+                    messageEl.className = 'form-message error';
+                    return;
                 }
-            } catch (sbErr) {
-                console.warn('[AdminSettings] Supabase password update warning:', sbErr);
-            }
-        }
 
-        if (!supabaseSessionActive) {
-            const savedAdminPass = localStorage.getItem('adminPassword') || 'admin123';
-            if (currentPass !== savedAdminPass) {
-                messageEl.textContent = '❌ Current password is incorrect.';
+                // Call Supabase Auth API to update user password
+                const { error: updateErr } = await window.supabaseClient.auth.updateUser({
+                    password: newPass
+                });
+
+                if (updateErr) {
+                    messageEl.textContent = '❌ ' + (updateErr.message || 'Failed to update admin password in Supabase Auth.');
+                    messageEl.className = 'form-message error';
+                    return;
+                }
+
+                messageEl.textContent = '✅ Admin password securely updated in Supabase Auth! (Synchronized across all devices)';
+                messageEl.className = 'form-message success';
+                form.reset();
+
+                setTimeout(() => {
+                    messageEl.textContent = '';
+                    messageEl.className = 'form-message';
+                }, 4000);
+                return;
+            } catch (sbErr) {
+                console.error('[AdminSettings] Supabase password update error:', sbErr);
+                messageEl.textContent = '❌ Error updating password: ' + (sbErr.message || 'Network error');
                 messageEl.className = 'form-message error';
                 return;
             }
         }
 
-        localStorage.setItem('adminPassword', newPass);
-
-        messageEl.textContent = '✅ Admin password updated successfully!';
-        messageEl.className = 'form-message success';
-
-        form.reset();
-
-        setTimeout(() => {
-            messageEl.textContent = '';
-            messageEl.className = 'form-message';
-        }, 3000);
+        // Demo fallback only if Supabase is unconfigured
+        messageEl.textContent = 'ℹ️ Supabase not configured. Password update is disabled in local demo mode.';
+        messageEl.className = 'form-message';
     });
 
 }

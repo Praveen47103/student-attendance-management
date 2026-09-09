@@ -44,8 +44,15 @@
             await new Promise(r => setTimeout(r, 100));
         }
 
-        // 1. Try Supabase cryptographic session check
-        if (window.supabaseClient) {
+        // Purge any lingering legacy adminPassword from localStorage
+        try {
+            localStorage.removeItem('adminPassword');
+        } catch (e) {}
+
+        const isSbConfigured = window.supabaseClient && typeof isSupabaseConfigured === 'function' && isSupabaseConfigured();
+
+        // 1. Supabase cryptographic session check
+        if (isSbConfigured) {
             try {
                 const { data: { session }, error } = await window.supabaseClient.auth.getSession();
 
@@ -55,9 +62,9 @@
                         .from('profiles')
                         .select('id, role, full_name, email')
                         .eq('id', session.user.id)
-                        .single();
+                        .maybeSingle();
 
-                    const role = profile?.role || 'student';
+                    const role = profile?.role || session.user.user_metadata?.role || 'student';
 
                     // Guard: Block students from admin pages
                     if (isAdminPage() && role !== 'admin') {
@@ -80,11 +87,11 @@
                     return; // Successfully verified via Supabase Auth
                 }
             } catch (err) {
-                console.warn('[SessionGuard] Supabase session check error, checking fallback:', err);
+                console.warn('[SessionGuard] Supabase session check error:', err);
             }
         }
 
-        // 2. Fallback check: localStorage demo accounts
+        // 2. Admin verification fallback
         const savedStudent = localStorage.getItem('loggedInStudent');
         const savedAdmin = localStorage.getItem('loggedInAdmin');
 
@@ -106,6 +113,7 @@
     function cleanupAndRedirect() {
         localStorage.removeItem('loggedInStudent');
         localStorage.removeItem('loggedInAdmin');
+        localStorage.removeItem('adminPassword');
         window.location.href = 'index.html';
     }
 

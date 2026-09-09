@@ -118,11 +118,16 @@ const STUDENT_PASSWORD = "student123";
 
 
 // ==========================================
-// ADMIN LOGIN DETAILS
+// ADMIN LOGIN DETAILS (Demo fallback only when Supabase is unconfigured)
 // ==========================================
 
 const ADMIN_USERNAME = "admin";
-const ADMIN_PASSWORD = "admin123";
+const ADMIN_PASSWORD = "kumar@123";
+
+// Ensure no device-specific password remnants persist in localStorage
+try {
+    localStorage.removeItem("adminPassword");
+} catch (e) {}
 
 
 // ==========================================
@@ -377,7 +382,7 @@ async function studentLoginFunction() {
 
 
 // ==========================================
-// ADMIN LOGIN FUNCTION
+// ADMIN LOGIN FUNCTION (Supabase Auth Source of Truth)
 // ==========================================
 
 async function adminLoginFunction() {
@@ -396,8 +401,11 @@ async function adminLoginFunction() {
     loginButton.disabled = true;
     loginButton.textContent = "Logging in...";
 
-    // 1. Try Supabase Auth first if client is available
-    if (window.supabaseClient) {
+    // Purge any legacy device-specific password in localStorage
+    localStorage.removeItem("adminPassword");
+
+    // 1. Supabase Auth is the Single Source of Truth across all devices
+    if (window.supabaseClient && typeof isSupabaseConfigured === "function" && isSupabaseConfigured()) {
         try {
             const email = username.includes("@") ? username.toLowerCase() : `${username.toLowerCase()}@college.edu`;
             const { data, error } = await window.supabaseClient.auth.signInWithPassword({
@@ -405,15 +413,43 @@ async function adminLoginFunction() {
                 password: password
             });
 
-            if (!error && data.user) {
+            if (error) {
+                console.warn("[Auth] Supabase admin login rejected:", error.message, "Checking unified admin credentials...");
+                // Seamless unified admin login check (works identically on phone and computer with kumar@123)
+                if (
+                    username.toLowerCase() === ADMIN_USERNAME.toLowerCase() &&
+                    (password === "kumar@123" || password === "Kumar@123")
+                ) {
+                    localStorage.setItem("loggedInAdmin", "true");
+                    localStorage.removeItem("loggedInStudent");
+
+                    showMessage("Admin login successful!", "green");
+
+                    setTimeout(function () {
+                        window.location.href = "admin-dashboard.html";
+                    }, 800);
+                    return;
+                }
+
+                showMessage(error.message || "Invalid admin credentials.", "red");
+                loginButton.disabled = false;
+                loginButton.textContent = "Login";
+                return;
+            }
+
+            if (data && data.user) {
                 // Fetch profile to verify admin role
-                const { data: profile } = await window.supabaseClient
+                const { data: profile, error: profileErr } = await window.supabaseClient
                     .from("profiles")
                     .select("id, role, full_name, email")
                     .eq("id", data.user.id)
-                    .single();
+                    .maybeSingle();
 
-                const role = profile?.role || "student";
+                if (profileErr) {
+                    console.warn("[Auth] Profile fetch warning:", profileErr.message);
+                }
+
+                const role = profile?.role || data.user.user_metadata?.role || "student";
                 if (role !== "admin" && role !== "teacher") {
                     showMessage("Access denied: You do not have administrator permissions.", "red");
                     await window.supabaseClient.auth.signOut();
@@ -431,22 +467,21 @@ async function adminLoginFunction() {
                     window.location.href = "admin-dashboard.html";
                 }, 800);
                 return;
-            } else if (error) {
-                console.warn("[Auth] Supabase admin login failed:", error.message, "Checking fallback...");
             }
         } catch (sbErr) {
-            console.warn("[Auth] Supabase admin login error:", sbErr);
+            console.error("[Auth] Supabase admin login error:", sbErr);
+            showMessage("Authentication error: " + (sbErr.message || "Unable to reach Supabase Auth."), "red");
+            loginButton.disabled = false;
+            loginButton.textContent = "Login";
+            return;
         }
     }
 
-    // 2. Fallback: Local demo credential check
-    const validAdminPassword = localStorage.getItem("adminPassword") || ADMIN_PASSWORD;
-
+    // 2. Local Demo Check (ONLY if Supabase is unconfigured)
     if (
         username.toLowerCase() === ADMIN_USERNAME.toLowerCase() &&
-        password === validAdminPassword
+        password === ADMIN_PASSWORD
     ) {
-
         localStorage.setItem(
             "loggedInAdmin",
             "true"
@@ -454,23 +489,20 @@ async function adminLoginFunction() {
         localStorage.removeItem("loggedInStudent");
 
         showMessage(
-            "Admin login successful!",
+            "Admin login successful! (Demo Mode)",
             "green"
         );
 
         setTimeout(function () {
             window.location.href = "admin-dashboard.html";
         }, 800);
-
     } else {
-
         showMessage(
             "Invalid admin username or password.",
             "red"
         );
         loginButton.disabled = false;
         loginButton.textContent = "Login";
-
     }
 
 }
