@@ -171,6 +171,12 @@
                         Monitor student attendance, manage classes, and generate reports.
                     </p>
 
+                    <div style="margin-top: 14px;">
+                        <button id="welcomeComposeBtn" style="background: #ffffff; color: #5a67d8; font-weight: 700; border: none; box-shadow: 0 4px 14px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; transition: transform 0.15s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+                            <span>📢</span> Compose & Send Announcement to Students
+                        </button>
+                    </div>
+
                 </div>
 
                 <div class="welcome-icon">
@@ -333,8 +339,39 @@
                         <p>Manage class schedule</p>
                     </a>
 
+                    <a href="javascript:void(0)" id="quickActionAnnouncementBtn" class="action-card" style="border-left: 3px solid #667eea; background: rgba(102, 126, 234, 0.04);">
+                        <div class="action-icon">📢</div>
+                        <h4>Send Announcement</h4>
+                        <p>Broadcast to all students or class</p>
+                    </a>
+
                 </div>
 
+            </div>
+
+
+            <!-- ==============================
+                 ANNOUNCEMENTS & NOTIFICATIONS
+            ============================== -->
+            <div class="announcement-section">
+                <div class="announcement-card">
+                    <div class="announcement-card-header">
+                        <div>
+                            <h3>📢 Announcements & Broadcasts</h3>
+                            <p>Dispatch real-time announcements and alerts to student accounts via Supabase</p>
+                        </div>
+                        <button id="openAnnouncementModalBtn" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
+                            <span>✍️</span> Compose Announcement
+                        </button>
+                    </div>
+                    <div class="announcements-feed" id="announcementsFeed">
+                        <!-- Loaded dynamically via Supabase -->
+                        <div class="announcement-empty">
+                            <span>📭</span>
+                            <p>Loading announcements...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
 
@@ -381,6 +418,76 @@
         </div>
 
     </main>
+
+
+    <!-- COMPOSE ANNOUNCEMENT MODAL -->
+    <div id="announcementModal" class="modal hidden">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>📢 Compose Announcement / Notification</h2>
+                <button class="modal-close" id="closeAnnouncementModal">✕</button>
+            </div>
+            <form id="announcementForm" class="modal-form">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label for="announcementAudience">Target Audience *</label>
+                        <select id="announcementAudience" required>
+                            <option value="all">👥 All Students (Broadcast)</option>
+                            <option value="class">🏫 Specific Class</option>
+                            <option value="student">👤 Specific Student</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="announcementType">Notification Type *</label>
+                        <select id="announcementType" required>
+                            <option value="announcement">📢 Announcement</option>
+                            <option value="attendance">📋 Attendance Alert</option>
+                            <option value="warning">⚠️ Warning / Shortage</option>
+                            <option value="general">🔔 General Notice</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Class Selector (Hidden by default) -->
+                    <div class="form-group hidden" id="targetClassGroup">
+                        <label for="targetClassSelect">Select Class *</label>
+                        <select id="targetClassSelect">
+                            <option value="">-- Choose Class --</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Student Selector (Hidden by default) -->
+                    <div class="form-group hidden" id="targetStudentGroup">
+                        <label for="targetStudentSelect">Select Student *</label>
+                        <select id="targetStudentSelect">
+                            <option value="">-- Choose Student --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group full-width" style="margin-top: 10px;">
+                    <label for="announcementTitle">Announcement Title *</label>
+                    <input type="text" id="announcementTitle" placeholder="e.g. Mid-term Exam Attendance Requirements" required>
+                </div>
+
+                <div class="form-group full-width" style="margin-top: 10px;">
+                    <label for="announcementMessage">Message Body *</label>
+                    <textarea id="announcementMessage" rows="4" placeholder="Type announcement or notification message for students..." required></textarea>
+                </div>
+
+                <div id="announcementFormMessage" class="form-message"></div>
+
+                <div class="form-actions" style="display: flex; gap: 12px; margin-top: 12px;">
+                    <button type="submit" class="btn btn-primary" id="sendAnnouncementBtn">
+                        🚀 Dispatch Announcement
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="cancelAnnouncementBtn">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
     <!-- Supabase JS Client & Session Guard -->

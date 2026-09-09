@@ -48,6 +48,10 @@ function initializeDashboard() {
 
     // 3. Setup Realtime subscription
     setupRealtimeDashboard();
+
+    // 4. Setup Announcement Module & Load Announcements
+    setupAnnouncementModule();
+    loadRecentAnnouncements();
 }
 
 
@@ -94,6 +98,14 @@ function setupRealtimeDashboard() {
                 { event: '*', schema: 'public', table: 'classes' },
                 () => {
                     loadDashboardClasses();
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'announcements' },
+                () => {
+                    loadRecentAnnouncements();
+                    loadRecentActivity();
                 }
             )
             .subscribe();
@@ -446,3 +458,389 @@ function setupLogoutButton() {
         }
     });
 }
+
+
+// ==============================================================================
+// ANNOUNCEMENT & BROADCAST NOTIFICATION MODULE (PHASE 9)
+// ==============================================================================
+
+let cachedDashboardClasses = [];
+let cachedDashboardStudents = [];
+
+function setupAnnouncementModule() {
+    const openBtn = document.getElementById('openAnnouncementModalBtn');
+    const modal = document.getElementById('announcementModal');
+    const closeBtn = document.getElementById('closeAnnouncementModal');
+    const cancelBtn = document.getElementById('cancelAnnouncementBtn');
+    const form = document.getElementById('announcementForm');
+    const audienceSelect = document.getElementById('announcementAudience');
+    const classGroup = document.getElementById('targetClassGroup');
+    const studentGroup = document.getElementById('targetStudentGroup');
+
+    if (!modal) return;
+
+    const openTrigger = () => {
+        if (form) form.reset();
+        const msgEl = document.getElementById('announcementFormMessage');
+        if (msgEl) {
+            msgEl.textContent = '';
+            msgEl.className = 'form-message';
+        }
+        if (classGroup) classGroup.classList.add('hidden');
+        if (studentGroup) studentGroup.classList.add('hidden');
+        modal.classList.remove('hidden');
+        loadAudienceDropdownData();
+    };
+
+    if (openBtn) openBtn.addEventListener('click', openTrigger);
+    const welcomeBtn = document.getElementById('welcomeComposeBtn');
+    if (welcomeBtn) welcomeBtn.addEventListener('click', openTrigger);
+    const quickBtn = document.getElementById('quickActionAnnouncementBtn');
+    if (quickBtn) quickBtn.addEventListener('click', openTrigger);
+
+    if (window.location.hash === '#compose') {
+        setTimeout(openTrigger, 300);
+    }
+
+    if (closeBtn) closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    if (cancelBtn) cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
+
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.add('hidden');
+    });
+
+    // Toggle target audience selectors
+    if (audienceSelect) {
+        audienceSelect.addEventListener('change', function () {
+            const val = this.value;
+            if (val === 'class') {
+                if (classGroup) classGroup.classList.remove('hidden');
+                if (studentGroup) studentGroup.classList.add('hidden');
+                document.getElementById('targetClassSelect')?.setAttribute('required', 'required');
+                document.getElementById('targetStudentSelect')?.removeAttribute('required');
+            } else if (val === 'student') {
+                if (classGroup) classGroup.classList.add('hidden');
+                if (studentGroup) studentGroup.classList.remove('hidden');
+                document.getElementById('targetStudentSelect')?.setAttribute('required', 'required');
+                document.getElementById('targetClassSelect')?.removeAttribute('required');
+            } else {
+                if (classGroup) classGroup.classList.add('hidden');
+                if (studentGroup) studentGroup.classList.add('hidden');
+                document.getElementById('targetClassSelect')?.removeAttribute('required');
+                document.getElementById('targetStudentSelect')?.removeAttribute('required');
+            }
+        });
+    }
+
+    // Submit Announcement
+    if (form) {
+        form.addEventListener('submit', handleAnnouncementSubmit);
+    }
+}
+
+async function loadAudienceDropdownData() {
+    const classSelect = document.getElementById('targetClassSelect');
+    const studentSelect = document.getElementById('targetStudentSelect');
+
+    // 1. Classes
+    if (classSelect && cachedDashboardClasses.length === 0) {
+        let classes = [];
+        if (window.supabaseClient) {
+            try {
+                const { data } = await window.supabaseClient
+                    .from('classes')
+                    .select('class_code, section, department, year')
+                    .order('class_code');
+                if (data && data.length > 0) classes = data;
+            } catch (e) {}
+        }
+        if (classes.length === 0) {
+            const stored = localStorage.getItem('classList');
+            classes = stored ? JSON.parse(stored) : getDefaultClasses();
+        }
+        cachedDashboardClasses = classes;
+
+        classSelect.innerHTML = '<option value="">-- Choose Class --</option>';
+        classes.forEach(c => {
+            const opt = document.createElement('option');
+            const code = c.class_code || c.code;
+            opt.value = code;
+            opt.textContent = `${code} (${c.department} - ${c.year || 'Class'})`;
+            classSelect.appendChild(opt);
+        });
+    }
+
+    // 2. Students
+    if (studentSelect && cachedDashboardStudents.length === 0) {
+        let students = [];
+        if (window.supabaseClient) {
+            try {
+                const { data } = await window.supabaseClient
+                    .from('students')
+                    .select('id, roll_number, name, department, year, section')
+                    .order('roll_number');
+                if (data && data.length > 0) students = data;
+            } catch (e) {}
+        }
+        if (students.length === 0) {
+            students = getStudentsList();
+        }
+        cachedDashboardStudents = students;
+
+        studentSelect.innerHTML = '<option value="">-- Choose Student --</option>';
+        students.forEach(s => {
+            const opt = document.createElement('option');
+            const roll = s.roll_number || s.rollNo;
+            opt.value = s.id || roll;
+            opt.dataset.roll = roll;
+            opt.dataset.name = s.name;
+            opt.textContent = `${roll} - ${s.name} (${s.department || 'CSE'})`;
+            studentSelect.appendChild(opt);
+        });
+    }
+}
+
+async function handleAnnouncementSubmit(e) {
+    e.preventDefault();
+
+    const audience = document.getElementById('announcementAudience').value;
+    const type = document.getElementById('announcementType').value;
+    const title = document.getElementById('announcementTitle').value.trim();
+    const message = document.getElementById('announcementMessage').value.trim();
+    const classVal = document.getElementById('targetClassSelect')?.value || null;
+    const studentVal = document.getElementById('targetStudentSelect')?.value || null;
+    const messageEl = document.getElementById('announcementFormMessage');
+    const submitBtn = document.getElementById('sendAnnouncementBtn');
+
+    if (!title || !message) {
+        if (messageEl) {
+            messageEl.textContent = '❌ Please enter both title and message.';
+            messageEl.className = 'form-message error';
+        }
+        return;
+    }
+
+    if (audience === 'class' && !classVal) {
+        if (messageEl) {
+            messageEl.textContent = '❌ Please select a specific class.';
+            messageEl.className = 'form-message error';
+        }
+        return;
+    }
+
+    if (audience === 'student' && !studentVal) {
+        if (messageEl) {
+            messageEl.textContent = '❌ Please select a specific student.';
+            messageEl.className = 'form-message error';
+        }
+        return;
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '🚀 Dispatching to Supabase...';
+    }
+
+    let announcementId = null;
+    let deliveredCount = 0;
+
+    // 1. Insert master record into public.announcements in Supabase
+    if (window.supabaseClient) {
+        try {
+            const { data: annData, error: annError } = await window.supabaseClient
+                .from('announcements')
+                .insert([{
+                    title,
+                    content: message,
+                    type,
+                    target_audience: audience,
+                    target_class: audience === 'class' ? classVal : null,
+                    target_student_id: (audience === 'student' && studentVal.includes('-')) ? studentVal : null,
+                    target_role: 'student',
+                    sender_name: 'Administrator'
+                }])
+                .select('id')
+                .single();
+
+            if (!annError && annData) {
+                announcementId = annData.id;
+            } else if (annError) {
+                console.warn('[AdminDashboard] announcements insert warning:', annError);
+            }
+        } catch (err) {
+            console.warn('[AdminDashboard] announcements insert error:', err);
+        }
+
+        // 2. Fetch target students from Supabase and insert individual notification records
+        try {
+            let targetStudents = [];
+
+            if (audience === 'student') {
+                // Single student
+                let studentDbId = studentVal;
+                if (!studentVal.includes('-')) {
+                    const { data: st } = await window.supabaseClient
+                        .from('students')
+                        .select('id, roll_number')
+                        .or(`roll_number.eq.${studentVal},id.eq.${studentVal}`)
+                        .maybeSingle();
+                    if (st) studentDbId = st.id;
+                }
+                targetStudents = [{ id: studentDbId }];
+            } else if (audience === 'class') {
+                // Class filter: e.g. 'CSE-A' -> department='CSE', section='A'
+                const parts = classVal.split('-');
+                let query = window.supabaseClient.from('students').select('id, roll_number, department, section');
+                if (parts.length === 2) {
+                    query = query.eq('department', parts[0]).eq('section', parts[1]);
+                } else {
+                    query = query.eq('department', classVal);
+                }
+                const { data: classStudents } = await query;
+                if (classStudents && classStudents.length > 0) {
+                    targetStudents = classStudents;
+                }
+            } else {
+                // All students
+                const { data: allStudents } = await window.supabaseClient
+                    .from('students')
+                    .select('id, roll_number');
+                if (allStudents && allStudents.length > 0) {
+                    targetStudents = allStudents;
+                }
+            }
+
+            // Bulk insert individual student notification records
+            if (targetStudents.length > 0) {
+                const notificationsToInsert = targetStudents.map(st => ({
+                    student_id: st.id,
+                    title,
+                    message,
+                    type,
+                    target_role: 'student',
+                    target_class: audience === 'class' ? classVal : null,
+                    announcement_id: announcementId,
+                    sender_name: 'Administrator',
+                    is_read: false
+                }));
+
+                for (let i = 0; i < notificationsToInsert.length; i += 50) {
+                    const batch = notificationsToInsert.slice(i, i + 50);
+                    const { error: notifErr } = await window.supabaseClient
+                        .from('notifications')
+                        .insert(batch);
+                    if (!notifErr) {
+                        deliveredCount += batch.length;
+                    }
+                }
+            } else {
+                // Fallback broadcast notification row with null student_id
+                await window.supabaseClient
+                    .from('notifications')
+                    .insert([{
+                        title,
+                        message,
+                        type,
+                        target_role: 'student',
+                        target_class: audience === 'class' ? classVal : null,
+                        announcement_id: announcementId,
+                        sender_name: 'Administrator',
+                        is_read: false
+                    }]);
+                deliveredCount = 1;
+            }
+        } catch (notifException) {
+            console.warn('[AdminDashboard] notifications delivery error:', notifException);
+        }
+    }
+
+    // Feedback message
+    if (messageEl) {
+        const countText = deliveredCount > 0 ? `delivered to ${deliveredCount} student account(s)` : 'broadcasted';
+        messageEl.textContent = `✅ Announcement successfully stored in Supabase & ${countText}!`;
+        messageEl.className = 'form-message success';
+    }
+
+    // Refresh recent announcements feed
+    loadRecentAnnouncements();
+
+    setTimeout(() => {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '🚀 Dispatch Announcement';
+        }
+        document.getElementById('announcementModal')?.classList.add('hidden');
+    }, 1200);
+}
+
+// Load and Render Recent Announcements Feed
+async function loadRecentAnnouncements() {
+    const feedEl = document.getElementById('announcementsFeed');
+    if (!feedEl) return;
+
+    let announcements = [];
+
+    if (window.supabaseClient) {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('announcements')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(4);
+
+            if (!error && data && data.length > 0) {
+                announcements = data;
+            }
+        } catch (e) {}
+    }
+
+    if (announcements.length === 0) {
+        feedEl.innerHTML = `
+            <div class="announcement-empty">
+                <span>🔕</span>
+                <p>No announcements broadcasted yet. Click "Compose Announcement" above to send one.</p>
+            </div>
+        `;
+        return;
+    }
+
+    feedEl.innerHTML = announcements.map(ann => {
+        let audienceLabel = '👥 All Students';
+        let pillClass = '';
+        if (ann.target_audience === 'class') {
+            audienceLabel = `🏫 Class: ${ann.target_class || 'Specific'}`;
+            pillClass = 'class-pill';
+        } else if (ann.target_audience === 'student') {
+            audienceLabel = '👤 Specific Student';
+            pillClass = 'student-pill';
+        }
+
+        const typeClass = ann.type ? `type-${ann.type}` : '';
+        const timeAgo = formatRelativeTime(ann.created_at);
+
+        return `
+            <div class="announcement-item-card ${typeClass}">
+                <div class="announcement-item-content">
+                    <h4 class="announcement-item-title">${escapeDashboardHtml(ann.title)}</h4>
+                    <p class="announcement-item-msg">${escapeDashboardHtml(ann.content)}</p>
+                    <div class="announcement-item-meta">
+                        <span class="audience-pill ${pillClass}">${audienceLabel}</span>
+                        <span>⏰ ${timeAgo}</span>
+                        <span>👑 ${ann.sender_name || 'Administrator'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function escapeDashboardHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+

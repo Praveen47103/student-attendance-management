@@ -79,9 +79,12 @@
                         <h4>🔔 Notifications</h4>
                         <span id="unreadCountBadge" class="unread-count-badge">0 unread</span>
                     </div>
-                    <button id="markAllReadBtn" class="mark-all-read-btn" title="Mark all as read">
-                        ✓ Mark all as read
-                    </button>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                        ${isAdmin ? '<button id="dropdownComposeBtn" class="mark-all-read-btn" style="background: #667eea; color: #ffffff; font-weight: 700; padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer;" title="Compose Announcement">📢 Compose</button>' : ''}
+                        <button id="markAllReadBtn" class="mark-all-read-btn" title="Mark all as read">
+                            ✓ Mark all
+                        </button>
+                    </div>
                 </div>
                 <div class="notification-list" id="notificationList">
                     <div class="notification-empty">
@@ -106,6 +109,7 @@
         const bellBtn = document.getElementById('notificationBellBtn');
         const dropdown = document.getElementById('notificationDropdown');
         const markAllBtn = document.getElementById('markAllReadBtn');
+        const dropdownCompose = document.getElementById('dropdownComposeBtn');
 
         if (bellBtn && dropdown) {
             bellBtn.addEventListener('click', (e) => {
@@ -117,6 +121,20 @@
             document.addEventListener('click', (e) => {
                 if (!wrapper.contains(e.target)) {
                     dropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        if (dropdownCompose) {
+            dropdownCompose.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.add('hidden');
+                const modal = document.getElementById('announcementModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    if (typeof loadAudienceDropdownData === 'function') loadAudienceDropdownData();
+                } else {
+                    window.location.href = 'admin-dashboard.html#compose';
                 }
             });
         }
@@ -163,25 +181,35 @@
                 // Admin sees admin notifications and general announcements
                 query = query.or('target_role.eq.admin,target_role.eq.all');
             } else {
-                // Student sees their specific notifications and general announcements
+                // Student sees their specific notifications, class notifications, and general announcements
                 const rollNo = getStudentRoll();
+                let currentStudentClass = '';
+
                 if (rollNo) {
                     if (!currentStudentId) {
                         const { data: s } = await window.supabaseClient
                             .from('students')
-                            .select('id')
+                            .select('id, department, section')
                             .eq('roll_number', rollNo)
                             .maybeSingle();
-                        if (s?.id) currentStudentId = s.id;
+                        if (s?.id) {
+                            currentStudentId = s.id;
+                            if (s.department && s.section) {
+                                currentStudentClass = `${s.department}-${s.section}`;
+                            }
+                        }
                     }
 
+                    const orConditions = ['target_role.eq.all', 'target_role.eq.student'];
                     if (currentStudentId) {
-                        query = query.or(`student_id.eq.${currentStudentId},target_role.eq.student,target_role.eq.all`);
-                    } else {
-                        query = query.or('target_role.eq.student,target_role.eq.all');
+                        orConditions.push(`student_id.eq.${currentStudentId}`);
                     }
+                    if (currentStudentClass) {
+                        orConditions.push(`target_class.eq.${currentStudentClass}`);
+                    }
+                    query = query.or(orConditions.join(','));
                 } else {
-                    query = query.eq('target_role', 'all');
+                    query = query.or('target_role.eq.all,target_role.eq.student');
                 }
             }
 
@@ -219,6 +247,14 @@
                     { event: '*', schema: 'public', table: 'notifications' },
                     payload => {
                         console.log('🔔 Realtime notification event:', payload);
+                        fetchLiveNotifications();
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'announcements' },
+                    payload => {
+                        console.log('📢 Realtime announcement event:', payload);
                         fetchLiveNotifications();
                     }
                 )
