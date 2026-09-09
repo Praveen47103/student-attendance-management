@@ -1,7 +1,18 @@
-# Student Attendance Management System
+# Smart Student Attendance Management System
 
-## 🌐 Live Website
+🌐 **Live Demo:** https://student-attendance-management-ruce.netlify.app/
 
+📂 **Source Code:** This repository
+
+## Features
+- Student & Admin Login
+- Online Attendance
+- Leave Management
+- Notifications
+- Faculty Management
+- Timetable
+- Reports & Analytics
+- AI Attendance Assistant
 [Open Student Attendance Management System](https://student-attendance-management-ruce.netlify.app/)
 
 
